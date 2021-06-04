@@ -3,33 +3,24 @@
 
 #include <TimeLib.h>
 #include <RTClib.h>
-#include <TinyGPS++.h>
-
-//#define time_offset 3600  // define a clock offset of 3600 seconds (1 hour) ==> UTC + 1
-
-// DS3231 i2c addr = 0x68 ?
-
-// // variable definitions
-// char Time[]  = "TIME: 00:00:00";
-// char Date[]  = "DATE: 00-00-2000";
-// byte last_second, Second, Minute, Hour, Day, Month;
-// int Year;
 
 enum HWTimeError
 {
     E_SUCCESS = 0,
-    E_RTC_NOT_FOUND = -1,
-    E_GPS_HW_NOT_FOUND = -2
+    E_RTC_NOT_FOUND = -1
 };
 
 class TimeKeeper {
 public:
     int begin();
     DateTime getHWTime();
+    DateTime getSysTime();
     void adjustHWTime(const DateTime &dt);
 private:
+    DateTime sys_time;
     RTC_DS3231 rtc;
-    TinyGPSPlus gps_device;
+    bool has_hw_clock;
+    bool has_time_source;
 };
 
 #endif //TIMEKEEPER_H

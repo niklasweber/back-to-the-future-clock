@@ -1,4 +1,0 @@
-class GPSTime {
-public:
-private:
-};
