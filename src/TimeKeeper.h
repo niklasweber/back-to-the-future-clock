@@ -3,6 +3,10 @@
 
 #include <TimeLib.h>
 #include <RTClib.h>
+#include <DCF77.h>
+
+#define DCF77_PIN 7 // Connection pin to DCF 77 device
+#define DCF77_INTERRUPT digitalPinToInterrupt(DCF77_PIN)
 
 enum HWTimeError
 {
@@ -12,15 +16,24 @@ enum HWTimeError
 
 class TimeKeeper {
 public:
-    int begin();
+    TimeKeeper():
+        has_hw_clock(false),
+        has_time_source(false),
+        dcf77(DCF77_PIN,DCF77_INTERRUPT)
+    {}
+
+    void begin();
+    bool hasHWClock();
     DateTime getHWTime();
-    DateTime getSysTime();
-    void adjustHWTime(const DateTime &dt);
+    bool pollTimeUpdate();
+    DateTime getLastTimeSync();
 private:
-    DateTime sys_time;
-    RTC_DS3231 rtc;
     bool has_hw_clock;
     bool has_time_source;
+    DateTime last_sync;
+    RTC_DS3231 rtc;
+    DCF77 dcf77;
+    void adjustHWTime(const DateTime &dt);
 };
 
 #endif //TIMEKEEPER_H

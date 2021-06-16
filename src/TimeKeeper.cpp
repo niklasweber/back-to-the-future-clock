@@ -1,28 +1,49 @@
 #include "TimeKeeper.h"
 
-int TimeKeeper::begin()
+void TimeKeeper::begin()
 {
-    if (!rtc.begin()) {
-        has_hw_clock = false;
-        return E_RTC_NOT_FOUND;
+    if (rtc.begin()) {
+        has_hw_clock = true;
+        setTime(rtc.now().unixtime());
     }
-    has_hw_clock = true;
-    has_time_source = false; // Set to true when validated.
 
-    return E_SUCCESS;
+    dcf77.Start();
+}
+
+bool TimeKeeper::hasHWClock()
+{
+    return has_hw_clock;
 }
 
 DateTime TimeKeeper::getHWTime()
 {
-    return rtc.now();
-}
+    if(has_hw_clock)
+        return rtc.now();
 
-DateTime TimeKeeper::getSysTime()
-{
-    return sys_time;
+    return DateTime();
 }
 
 void TimeKeeper::adjustHWTime(const DateTime &dt)
 {
-    rtc.adjust(dt);
+    if(has_hw_clock)
+        rtc.adjust(dt);
+}
+
+DateTime TimeKeeper::getLastTimeSync()
+{
+    return last_sync;
+}
+
+bool TimeKeeper::pollTimeUpdate()
+{
+    DateTime dcf77time = DateTime(dcf77.getTime());
+    if (dcf77time.unixtime() != 0)
+    {
+        adjustHWTime(dcf77time);
+        setTime(dcf77time.unixtime());
+        last_sync = dcf77time;
+        has_time_source = true;
+        return true;
+    }
+    return false;
 }
