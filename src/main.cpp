@@ -1,17 +1,26 @@
 #include <Arduino.h>
 #include "TimeKeeper.h"
+#include "Display.h"
 
 TimeKeeper timeKeeper;
+Display display;
+
+// Make LED blink on DCF77 signal
+void dcf77IntHandler() {
+    digitalWrite(LED_BUILTIN, digitalRead(DCF77_PIN));
+}
 
 void setup()
 {
     Serial.begin(9600);
     Serial.println("Start");
-
-    // debugging LED
-    pinMode(17, OUTPUT);
     
     timeKeeper.begin();
+    display.begin();
+
+    // debugging LED
+    pinMode(LED_BUILTIN, OUTPUT);
+    attachInterrupt(DCF77_INTERRUPT, dcf77IntHandler, CHANGE);
 }
 
 char timeStr1[40];
