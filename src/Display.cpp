@@ -1,41 +1,197 @@
 #include "Display.h"
+#include <Arduino.h>
+
+// const uint8_t SEG_DONE[] = {
+// 	SEG_B | SEG_C | SEG_D | SEG_E | SEG_G,           // d
+// 	SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F,   // O
+// 	SEG_C | SEG_E | SEG_G,                           // n
+// 	SEG_A | SEG_D | SEG_E | SEG_F | SEG_G            // E
+// };
 
 void Display::begin()
 {
+  uint8_t all_on[]  = { 0xff, 0xff, 0xff, 0xff, 0xff };
 
+  for(unsigned int i=0; i<displayRows; i++)
+  {
+    for(unsigned int j=0; j<displayColumns; j++)
+    {
+      displays[i][j]->setBrightness(0x0f);
+      displays[i][j]->setSegments(all_on, 5);
+    }
+  }
+  
+	// // Run through all the dots
+	// for(int k=0; k <= 4; k++) {
+	// 	displays[1][2]->showNumberDecEx(0, (0x80 >> k), true);
+	// 	delay(TEST_DELAY);
+	// }
+
+  //displays[1][2]->setBrightness(k);
 }
 
-void Display::setRow(unsigned char row)
+void Display::clear()
 {
-
+    uint8_t all_off[] = { 0x00, 0x00, 0x00, 0x00, 0x00 };
+    for(unsigned int i=0; i<displayRows; i++)
+    {
+      for(unsigned int j=0; j<displayColumns; j++)
+      {
+        displays[i][j]->setSegments(all_off, 5);
+      }
+    }
 }
 
-void Display::setDay(unsigned int day)
+void Display::setBrightness(unsigned char brightness, bool on)
 {
+  for(unsigned int j=0; j<displayColumns; j++)
+  {
+    displays[row][j]->setBrightness(brightness, on);
+  }
+}
 
+void Display::showRTCError()
+{
+  const uint8_t disp1[] = {
+    SEG_A | SEG_D | SEG_E | SEG_F | SEG_G,   // E
+    SEG_E | SEG_G,                           // r
+    SEG_E | SEG_G,                           // r
+    0x00
+  };
+  const uint8_t disp2[] = {
+    SEG_E | SEG_G,                          // r
+    SEG_D | SEG_E | SEG_F | SEG_G,          // t
+    SEG_D | SEG_E | SEG_G,                  // c
+    0x00
+  };
+  const uint8_t all_off[] = { 0x00, 0x00, 0x00, 0x00, 0x00 };
+
+  displays[row][0]->setSegments(disp1);
+  displays[row][1]->setSegments(disp2);
+  displays[row][2]->setSegments(all_off, 5);
+}
+
+void Display::setRow(unsigned int row)
+{
+  if(row > displayRows) row = 0;
+  this->row = row;
+}
+
+void Display::setMonth(unsigned char month)
+{
+  uint8_t digits[2];
+  if(month <= 12 && month >= 1)
+  {
+    digits[0] = displays[row][0]->encodeDigit((month / 10) % 10 );
+    digits[1] = displays[row][0]->encodeDigit( month % 10 );
+  }
+  else
+  {
+    // show "--"
+    digits[0] = 0x00 | SEG_G;
+    digits[1] = 0x00 | SEG_G;
+  }
+
+  // Set dot
+  digits[1] |= SEG_DP;
+
+  displays[row][0]->setSegments(digits, 2, 2);
+}
+
+void Display::setDay(unsigned char day)
+{
+  uint8_t digits[2];
+  if(day <= 31 && day >= 1)
+  {
+    digits[0] = displays[row][0]->encodeDigit((day / 10) % 10 );
+    digits[1] = displays[row][0]->encodeDigit( day % 10 );
+  }
+  else
+  {
+    // show "--"
+    digits[0] = 0x00 | SEG_G;
+    digits[1] = 0x00 | SEG_G;
+  }
+
+  // Set dot
+  digits[1] |= SEG_DP;
+
+  displays[row][0]->setSegments(digits, 2, 0);
 }
 
 void Display::setYear(unsigned int year)
 {
+  uint8_t digits[4];
+  if(year <= 9999)
+  {
+    for(int i = 3; i>=0; i--)
+    {
+      digits[i] = displays[row][1]->encodeDigit(year % 10);
+      year /= 10;
+    }
+  }
+  else
+  {
+    // show "----"
+    digits[0] = 0x00 | SEG_G;
+    digits[1] = 0x00 | SEG_G;
+    digits[2] = 0x00 | SEG_G;
+    digits[3] = 0x00 | SEG_G;
+  }
 
+  // Turn off dots
+  digits[0] &= ~SEG_DP;
+  digits[1] &= ~SEG_DP;
+  digits[2] &= ~SEG_DP;
+  digits[3] &= ~SEG_DP;
+
+  displays[row][1]->setSegments(digits);
 }
 
-void Display::setHour(const unsigned int hour)
+// Needs to be set together due to problem in TM1637 lib 
+// (cannot set am/pm without overwriting minute).
+void Display::setHourAndMinute(unsigned char hour, unsigned char minute)
 {
+  uint8_t digits[5];
+  if(hour <= 24)
+  {
+    if(hour == 24) hour = 0;
+    
+    digits[0] = displays[row][2]->encodeDigit((hour / 10) % 10 );
+    digits[1] = displays[row][2]->encodeDigit( hour % 10 );
+    
+    // Set AM/PM
+    if(hour >= 0 && hour <= 11) digits[4] = 0x01;
+    else                        digits[4] = 0x10;
+  }
+  else
+  {
+    // show "--"
+    digits[0] = 0x00 | SEG_G;
+    digits[1] = 0x00 | SEG_G;
+    // turn off AM/PM
+    digits[4] = 0x00;
+  }
 
-}
+  if(minute <= 60)
+  {
+    if(minute == 60) minute = 0;
 
-void Display::setMinute(const unsigned int minute)
-{
+    digits[2] = displays[row][2]->encodeDigit((minute / 10) % 10 );
+    digits[3] = displays[row][2]->encodeDigit( minute % 10);
+  }
+  else
+  {
+    // show "--"
+    digits[2] = 0x00 | SEG_G;
+    digits[3] = 0x00 | SEG_G;
+  }
+  
+  // Set colon
+  digits[0] &= ~SEG_DP;
+  digits[1] |= SEG_DP;
+  digits[2] &= ~SEG_DP;
+  digits[3] &= ~SEG_DP;
 
-}
-
-void Display::setAM(const bool on)
-{
-
-}
-
-void Display::setPM(const bool on)
-{
-
+  displays[row][2]->setSegments(digits, 5, 0);
 }

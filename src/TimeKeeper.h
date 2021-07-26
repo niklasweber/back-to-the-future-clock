@@ -5,7 +5,7 @@
 #include <RTClib.h>
 #include <DCF77.h>
 
-#define DCF77_PIN 3 // Connection pin to DCF 77 device
+#define DCF77_PIN 2 // Connection pin to DCF 77 device
 #define DCF77_INTERRUPT digitalPinToInterrupt(DCF77_PIN)
 
 enum HWTimeError
