@@ -71,6 +71,27 @@ void Display::showRTCError()
   displays[row][2]->setSegments(all_off, 5);
 }
 
+void Display::showCommandInterfaceError()
+{
+  const uint8_t disp1[] = {
+    SEG_A | SEG_D | SEG_E | SEG_F | SEG_G,   // E
+    SEG_E | SEG_G,                           // r
+    SEG_E | SEG_G,                           // r
+    0x00
+  };
+  const uint8_t disp2[] = {
+    SEG_E | SEG_G,                          // r
+    SEG_B | SEG_C | SEG_D | SEG_E | SEG_G,  // d
+    SEG_C,                                  // i
+    SEG_C | SEG_D | SEG_E | SEG_G           // o
+  };
+  const uint8_t all_off[] = { 0x00, 0x00, 0x00, 0x00, 0x00 };
+
+  displays[row][0]->setSegments(disp1);
+  displays[row][1]->setSegments(disp2);
+  displays[row][2]->setSegments(all_off, 5);
+}
+
 void Display::setRow(unsigned int row)
 {
   if(row > displayRows) row = 0;

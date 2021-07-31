@@ -21,6 +21,7 @@ public:
     void clear();
     void setBrightness(unsigned char brightness, bool on = true);
     void showRTCError();
+    void showCommandInterfaceError();
     void setRow(unsigned int row);
     void setMonth(unsigned char month);
     void setDay(unsigned char day);
