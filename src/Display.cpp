@@ -1,218 +1,42 @@
 #include "Display.h"
 #include <Arduino.h>
 
-// const uint8_t SEG_DONE[] = {
-// 	SEG_B | SEG_C | SEG_D | SEG_E | SEG_G,           // d
-// 	SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F,   // O
-// 	SEG_C | SEG_E | SEG_G,                           // n
-// 	SEG_A | SEG_D | SEG_E | SEG_F | SEG_G            // E
-// };
-
-void Display::begin()
+void Display::setSegments(const uint8_t segments[], uint8_t length, uint8_t pos)
 {
-  uint8_t all_on[]  = { 0xff, 0xff, 0xff, 0xff, 0xff };
+    if(pos > segmentsMax-1)
+        pos = segmentsMax-1;
 
-  for(unsigned int i=0; i<displayRows; i++)
-  {
-    for(unsigned int j=0; j<displayColumns; j++)
+    if((pos + length) > segmentsMax)
+        length = segmentsMax - pos;
+
+    memcpy(this->segments+pos, segments, length);
+
+    // Due to limitation of display library, pos cannot be larger than 4. Bypass by starting at 4.
+    if(pos > 4)
     {
-      displays[i][j]->setBrightness(0x0f);
-      displays[i][j]->setSegments(all_on, 5);
+        length += pos - 4;
+        pos = 4;
     }
-  }
-  
-	// // Run through all the dots
-	// for(int k=0; k <= 4; k++) {
-	// 	displays[1][2]->showNumberDecEx(0, (0x80 >> k), true);
-	// 	delay(TEST_DELAY);
-	// }
-
-  //displays[1][2]->setBrightness(k);
+    hw.setSegments(segments, length, pos);
 }
 
-void Display::clear()
+void Display::setDigits(uint8_t digits[], uint8_t length, uint8_t pos)
 {
-    uint8_t all_off[] = { 0x00, 0x00, 0x00, 0x00, 0x00 };
-    for(unsigned int i=0; i<displayRows; i++)
+    for(int i=0; i<length; i++)
     {
-      for(unsigned int j=0; j<displayColumns; j++)
-      {
-        displays[i][j]->setSegments(all_off, 5);
-      }
+        digits[i] = hw.encodeDigit(digits[i]);
     }
+    setSegments(digits, length, pos);
 }
 
-void Display::setBrightness(unsigned char brightness, bool on)
+uint8_t Display::encodeDigit(uint8_t digit)
 {
-  for(unsigned int j=0; j<displayColumns; j++)
-  {
-    displays[row][j]->setBrightness(brightness, on);
-  }
+    return hw.encodeDigit(digit);
 }
 
-void Display::showRTCError()
+void Display::setBrightness(uint8_t brightness, bool on)
 {
-  const uint8_t disp1[] = {
-    SEG_A | SEG_D | SEG_E | SEG_F | SEG_G,   // E
-    SEG_E | SEG_G,                           // r
-    SEG_E | SEG_G,                           // r
-    0x00
-  };
-  const uint8_t disp2[] = {
-    SEG_E | SEG_G,                          // r
-    SEG_D | SEG_E | SEG_F | SEG_G,          // t
-    SEG_D | SEG_E | SEG_G,                  // c
-    0x00
-  };
-  const uint8_t all_off[] = { 0x00, 0x00, 0x00, 0x00, 0x00 };
-
-  displays[row][0]->setSegments(disp1);
-  displays[row][1]->setSegments(disp2);
-  displays[row][2]->setSegments(all_off, 5);
-}
-
-void Display::showCommandInterfaceError()
-{
-  const uint8_t disp1[] = {
-    SEG_A | SEG_D | SEG_E | SEG_F | SEG_G,   // E
-    SEG_E | SEG_G,                           // r
-    SEG_E | SEG_G,                           // r
-    0x00
-  };
-  const uint8_t disp2[] = {
-    SEG_E | SEG_G,                          // r
-    SEG_B | SEG_C | SEG_D | SEG_E | SEG_G,  // d
-    SEG_C,                                  // i
-    SEG_C | SEG_D | SEG_E | SEG_G           // o
-  };
-  const uint8_t all_off[] = { 0x00, 0x00, 0x00, 0x00, 0x00 };
-
-  displays[row][0]->setSegments(disp1);
-  displays[row][1]->setSegments(disp2);
-  displays[row][2]->setSegments(all_off, 5);
-}
-
-void Display::setRow(unsigned int row)
-{
-  if(row > displayRows) row = 0;
-  this->row = row;
-}
-
-void Display::setMonth(unsigned char month)
-{
-  uint8_t digits[2];
-  if(month <= 12 && month >= 1)
-  {
-    digits[0] = displays[row][0]->encodeDigit((month / 10) % 10 );
-    digits[1] = displays[row][0]->encodeDigit( month % 10 );
-  }
-  else
-  {
-    // show "--"
-    digits[0] = 0x00 | SEG_G;
-    digits[1] = 0x00 | SEG_G;
-  }
-
-  // Set dot
-  digits[1] |= SEG_DP;
-
-  displays[row][0]->setSegments(digits, 2, 2);
-}
-
-void Display::setDay(unsigned char day)
-{
-  uint8_t digits[2];
-  if(day <= 31 && day >= 1)
-  {
-    digits[0] = displays[row][0]->encodeDigit((day / 10) % 10 );
-    digits[1] = displays[row][0]->encodeDigit( day % 10 );
-  }
-  else
-  {
-    // show "--"
-    digits[0] = 0x00 | SEG_G;
-    digits[1] = 0x00 | SEG_G;
-  }
-
-  // Set dot
-  digits[1] |= SEG_DP;
-
-  displays[row][0]->setSegments(digits, 2, 0);
-}
-
-void Display::setYear(unsigned int year)
-{
-  uint8_t digits[4];
-  if(year <= 9999)
-  {
-    for(int i = 3; i>=0; i--)
-    {
-      digits[i] = displays[row][1]->encodeDigit(year % 10);
-      year /= 10;
-    }
-  }
-  else
-  {
-    // show "----"
-    digits[0] = 0x00 | SEG_G;
-    digits[1] = 0x00 | SEG_G;
-    digits[2] = 0x00 | SEG_G;
-    digits[3] = 0x00 | SEG_G;
-  }
-
-  // Turn off dots
-  digits[0] &= ~SEG_DP;
-  digits[1] &= ~SEG_DP;
-  digits[2] &= ~SEG_DP;
-  digits[3] &= ~SEG_DP;
-
-  displays[row][1]->setSegments(digits);
-}
-
-// Needs to be set together due to problem in TM1637 lib 
-// (cannot set am/pm without overwriting minute).
-void Display::setHourAndMinute(unsigned char hour, unsigned char minute)
-{
-  uint8_t digits[5];
-  if(hour <= 24)
-  {
-    if(hour == 24) hour = 0;
-    
-    digits[0] = displays[row][2]->encodeDigit((hour / 10) % 10 );
-    digits[1] = displays[row][2]->encodeDigit( hour % 10 );
-    
-    // Set AM/PM
-    if(hour >= 0 && hour <= 11) digits[4] = 0x01;
-    else                        digits[4] = 0x10;
-  }
-  else
-  {
-    // show "--"
-    digits[0] = 0x00 | SEG_G;
-    digits[1] = 0x00 | SEG_G;
-    // turn off AM/PM
-    digits[4] = 0x00;
-  }
-
-  if(minute <= 60)
-  {
-    if(minute == 60) minute = 0;
-
-    digits[2] = displays[row][2]->encodeDigit((minute / 10) % 10 );
-    digits[3] = displays[row][2]->encodeDigit( minute % 10);
-  }
-  else
-  {
-    // show "--"
-    digits[2] = 0x00 | SEG_G;
-    digits[3] = 0x00 | SEG_G;
-  }
-  
-  // Set colon
-  digits[0] &= ~SEG_DP;
-  digits[1] |= SEG_DP;
-  digits[2] &= ~SEG_DP;
-  digits[3] &= ~SEG_DP;
-
-  displays[row][2]->setSegments(digits, 5, 0);
+    this->brightness = brightness;
+    this->powerOn = on;
+    hw.setBrightness(brightness, on);
 }

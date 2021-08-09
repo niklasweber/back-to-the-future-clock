@@ -1,13 +1,13 @@
 #include <Arduino.h>
 #include "TimeKeeper.h"
-#include "Display.h"
+#include "DisplayPanel.h"
 #include "CommandInterface.h"
 
 
 #define BOOT_MIN_TIME 2000
 
 TimeKeeper timeKeeper;
-Display display;
+DisplayPanel displayPanel;
 CommandInterface commandInterface;
 
 // Make LED blink on DCF77 signal
@@ -17,7 +17,7 @@ CommandInterface commandInterface;
 
 void setup()
 {
-    display.begin();
+    displayPanel.begin();
 
     Serial.begin(9600);
     Serial.println("Back to the future clock - Start");
@@ -31,15 +31,15 @@ void setup()
 
     if(!timeKeeper.hasHWClock())
     {
-        display.setRow(1);
-        display.showRTCError();
+        displayPanel.setRow(1);
+        displayPanel.showRTCError();
         delay(2000);
     }
 
     if(!commandInterface.begin())
     {
-        display.setRow(1);
-        display.showCommandInterfaceError();
+        displayPanel.setRow(1);
+        displayPanel.showCommandInterfaceError();
         delay(2000);
 
         while (1) {} // hold in infinite loop
@@ -47,29 +47,29 @@ void setup()
     }
 
     if(unsigned long m = millis() < BOOT_MIN_TIME) delay(BOOT_MIN_TIME - m);
-    display.clear();
+    displayPanel.clear();
     delay(500);
 
     // Set top row to "26.10. 1985 AM 01:21"
-    display.setRow(2);
-    display.setDay(26);
-    display.setMonth(10);
-    display.setYear(1985);
-    display.setHourAndMinute(1, 21);
+    displayPanel.setRow(2);
+    displayPanel.setDay(26);
+    displayPanel.setMonth(10);
+    displayPanel.setYear(1985);
+    displayPanel.setHourAndMinute(1, 21);
 
     // Set middle row to current system time
-    display.setRow(1);
-    display.setDay(day());
-    display.setMonth(month());
-    display.setYear(year());
-    display.setHourAndMinute(hour(), minute());
+    displayPanel.setRow(1);
+    displayPanel.setDay(day());
+    displayPanel.setMonth(month());
+    displayPanel.setYear(year());
+    displayPanel.setHourAndMinute(hour(), minute());
 
     // Set bottom row to "12.11. 1955 AM 06:38"
-    display.setRow(0);
-    display.setDay(12);
-    display.setMonth(11);
-    display.setYear(1955);
-    display.setHourAndMinute(6, 38);
+    displayPanel.setRow(0);
+    displayPanel.setDay(12);
+    displayPanel.setMonth(11);
+    displayPanel.setYear(1955);
+    displayPanel.setHourAndMinute(6, 38);
 }
 
 // char timeStr1[40];
@@ -84,11 +84,11 @@ void loop()
         Serial.println("Time updated!");
 
         // On bottom row, show when time was last updated
-        display.setRow(0);
-        display.setDay(day());
-        display.setMonth(month());
-        display.setYear(year());
-        display.setHourAndMinute(hour(), minute());
+        displayPanel.setRow(0);
+        displayPanel.setDay(day());
+        displayPanel.setMonth(month());
+        displayPanel.setYear(year());
+        displayPanel.setHourAndMinute(hour(), minute());
     }
 
     // if(timeKeeper.hasHWClock())
@@ -114,11 +114,11 @@ void loop()
     //     second());
 
     // // Set middle row to current system time
-    display.setRow(1);
-    display.setDay(day());
-    display.setMonth(month());
-    display.setYear(year());
-    display.setHourAndMinute(hour(), minute());
+    displayPanel.setRow(1);
+    displayPanel.setDay(day());
+    displayPanel.setMonth(month());
+    displayPanel.setYear(year());
+    displayPanel.setHourAndMinute(hour(), minute());
 
     // Serial.print(timeStr1);
     // Serial.println(timeStr2);
@@ -127,4 +127,4 @@ void loop()
 }
 
 
-// TODO: Save display data internally, check if content changed, only update display if content changed.
+// TODO: Save displayPanel data internally, check if content changed, only update displayPanel if content changed.

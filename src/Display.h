@@ -3,47 +3,22 @@
 
 #include <TM1637Display.h>
 
-#define DIO 14 // A0
-#define CLK_DISPLAY1_ROW_BOTTOM 3
-#define CLK_DISPLAY2_ROW_BOTTOM 4
-#define CLK_DISPLAY3_ROW_BOTTOM 5
-#define CLK_DISPLAY1_ROW_MIDDLE 6
-#define CLK_DISPLAY2_ROW_MIDDLE 7
-#define CLK_DISPLAY3_ROW_MIDDLE 8
-#define CLK_DISPLAY1_ROW_TOP 15 // A1
-#define CLK_DISPLAY2_ROW_TOP 16 // A2
-#define CLK_DISPLAY3_ROW_TOP 17 // A3
-
-class Display 
+class Display
 {
 public:
-    void begin();
-    void clear();
-    void setBrightness(unsigned char brightness, bool on = true);
-    void showRTCError();
-    void showCommandInterfaceError();
-    void setRow(unsigned int row);
-    void setMonth(unsigned char month);
-    void setDay(unsigned char day);
-    void setYear(unsigned int year);
-    void setHourAndMinute(unsigned char hour, unsigned char minute);
-
+    Display(uint8_t pinClk, uint8_t pinDIO, unsigned int bitDelay = 100U):
+        hw(pinClk, pinDIO, bitDelay), segments{}, brightness(0), powerOn(false) {};
+    void setSegments(const uint8_t segments[], uint8_t length = 4, uint8_t pos = 0);
+    // uint8_t getSegments(uint8_t column);
+    void setDigits(uint8_t digits[], uint8_t length = 4, uint8_t pos = 0);
+    uint8_t encodeDigit(uint8_t digit);
+    void setBrightness(uint8_t brightness, bool on = true);
 private:
-    unsigned char row = 0;
-    TM1637Display display1rowBottom = TM1637Display(CLK_DISPLAY1_ROW_BOTTOM, DIO);
-    TM1637Display display2rowBottom = TM1637Display(CLK_DISPLAY2_ROW_BOTTOM, DIO);
-    TM1637Display display3rowBottom = TM1637Display(CLK_DISPLAY3_ROW_BOTTOM, DIO);
-    TM1637Display display1rowMiddle = TM1637Display(CLK_DISPLAY1_ROW_MIDDLE, DIO);
-    TM1637Display display2rowMiddle = TM1637Display(CLK_DISPLAY2_ROW_MIDDLE, DIO);
-    TM1637Display display3rowMiddle = TM1637Display(CLK_DISPLAY3_ROW_MIDDLE, DIO);
-    TM1637Display display1rowTop    = TM1637Display(CLK_DISPLAY1_ROW_TOP, DIO);
-    TM1637Display display2rowTop    = TM1637Display(CLK_DISPLAY2_ROW_TOP, DIO);
-    TM1637Display display3rowTop    = TM1637Display(CLK_DISPLAY3_ROW_TOP, DIO);
-    TM1637Display *displays[3][3] = {   {&display1rowBottom, &display2rowBottom, &display3rowBottom},
-                                        {&display1rowMiddle, &display2rowMiddle, &display3rowMiddle},
-                                        {&display1rowTop,    &display2rowTop,    &display3rowTop}};
-    const unsigned int displayRows = 3;
-    const unsigned int displayColumns = 3;
+    TM1637Display hw;
+    uint8_t segments[6];
+    uint8_t segmentsMax = 6;
+    uint8_t brightness;
+    bool powerOn;
 };
 
-#endif //DISPLAY_H
+#endif // DISPLAY_H
