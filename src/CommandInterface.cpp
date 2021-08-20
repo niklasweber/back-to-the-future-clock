@@ -1,7 +1,9 @@
 #include "CommandInterface.h"
 
-uint8_t CommandInterface::begin()
+uint8_t CommandInterface::begin(void (*onSetSegmentsPtr)(cmd_set_segments&))
 {
+    this->onSetSegmentsPtr = onSetSegmentsPtr;
+
     // initialize the transceiver on the SPI bus
     if (!radio.begin())
         return 0;
@@ -11,53 +13,70 @@ uint8_t CommandInterface::begin()
     // each other.
     radio.setPALevel(RF24_PA_LOW);  // RF24_PA_MAX is default.
 
-    // save on transmission time by setting the radio to only transmit the
-    // number of bytes we need to transmit a float
-    radio.setPayloadSize(sizeof(float)); // float datatype occupies 4 bytes
+    radio.setPayloadSize(32); // float datatype occupies 4 bytes
 
-    // Let these addresses be used for the pair
-    uint8_t address[][6] = {"1Node", "2Node"};
-    // It is very helpful to think of an address as a path instead of as
-    // an identifying device destination
-
-    // TODO: Both necessary for RX only?
-
-    // set the TX address of the RX node into the TX pipe
-    radio.openWritingPipe(address[0]);     // always uses pipe 0
-
-    // set the RX address of the TX node into a RX pipe
-    radio.openReadingPipe(1, address[1]); // using pipe 1
-
+    // Pipes are used to logically divide multiple senders on the same radio channel/frequency.
+    // An address is linked to a pipe. This way it is much easier to filter messages
+    // from different sender addresses.
+    // We don't really use this feature as only one sender is used in this application.
+    // So just assign the sender to pipe 0. The other pipes are not used.
+    // uint8_t other_node_addr[6] = "2Node";
+    uint8_t other_node_addr[6] = "B2TFR"; // Back To The Future Remote
+    radio.openReadingPipe(1, other_node_addr); // pipe 1 = other_node_addr
 
     radio.startListening();
-
-    // For debugging info
-    // printf_begin();             // needed only once for printing details
-    // radio.printDetails();       // (smaller) function that prints raw register values
-    // radio.printPrettyDetails(); // (larger) function that prints human readable data
 
     return 1;
 }
 
 void CommandInterface::handleInput()
 {
-    // TODO: validate radio is initialized. Otherwise initialize.
+    if (radio.failureDetected) 
+    {
+        radio.failureDetected = false;
+        delay(250);
+        begin(onSetSegmentsPtr);
+    }
 
-    // For this example, we'll be using a payload containing
-    // a single float number that will be incremented
-    // on every successful transmission
-    float payload = 0.0;
+    uint8_t payload[32] = {0};
 
     uint8_t pipe;
-    if (radio.available(&pipe)) {             // is there a payload? get the pipe number that recieved it
-      uint8_t bytes = radio.getPayloadSize(); // get the size of the payload
-      radio.read(&payload, bytes);            // fetch payload from FIFO
-      Serial.print(F("Received "));
-      Serial.print(bytes);                    // print the size of the payload
-      Serial.print(F(" bytes on pipe "));
-      Serial.print(pipe);                     // print the pipe number
-      Serial.print(F(": "));
-      Serial.println(payload);                // print the payload's value
+    if (radio.available(&pipe)) { // Available? On which pipe was it received?
+        radio.read(payload, 32); // fetch payload from FIFO
+
+        if( payload[0] != 'B' || 
+            payload[1] != '2' ||
+            payload[2] != 'T' ||
+            payload[3] != 'F')
+            return;
+
+        switch (payload[4])
+        {
+        case CMD_SET_SEGMENTS:
+        {
+            cmd_set_segments& cmd = reinterpret_cast<cmd_set_segments&>(payload);
+
+            if(cmd.length > 25)
+                break;
+
+            if(cmd.startPos + cmd.length > 36)
+                break;
+
+            onSetSegmentsPtr(cmd);
+            break;
+        }
+        case CMD_PLAY_SOUND:
+            Serial.print("CMD_PLAY_SOUND ");
+            break;
+
+        case CMD_DISABLE_DCF77:
+            Serial.print("CMD_DISABLE_DCF77 ");
+            break;
+
+        default:
+            Serial.print("Unknown command ");
+            break;
+        }
     }
 
     // TODO: call callback when data received. Outside function should handle data.

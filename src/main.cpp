@@ -15,6 +15,32 @@ CommandInterface commandInterface;
 //     digitalWrite(LED_BUILTIN, digitalRead(DCF77_PIN));
 // }
 
+void onSetSegments(cmd_set_segments& cmd)
+{
+    Serial.print("CMD_SET_SEGMENT ");
+
+    Serial.print(cmd.preamble[0]);
+    Serial.print(" ");
+    Serial.print(cmd.preamble[1]);
+    Serial.print(" ");
+    Serial.print(cmd.preamble[2]);
+    Serial.print(" ");
+    Serial.print(cmd.preamble[3]);
+    Serial.print(" ");
+    Serial.print(cmd.cmd);
+    Serial.print(" ");
+    Serial.print(cmd.length);
+    Serial.print(" ");
+    Serial.print(cmd.startPos);
+    Serial.print(" ");
+    for(int i=0; i<25; i++)
+    {
+        Serial.print(cmd.segments[i]);
+        Serial.print(" ");
+    }
+    Serial.println();
+}
+
 void setup()
 {
     displayPanel.begin();
@@ -36,7 +62,7 @@ void setup()
         delay(2000);
     }
 
-    if(!commandInterface.begin())
+    if(!commandInterface.begin(&onSetSegments))
     {
         displayPanel.setRow(1);
         displayPanel.showCommandInterfaceError();
