@@ -19,6 +19,7 @@ class DisplayPanel
 public:
     void begin();
     void clear();
+    void setSegments(const uint8_t segments[], uint8_t length, uint8_t pos = 0);
     void setBrightness(unsigned char row, unsigned char column, unsigned char brightness, bool on = true);
     void showRTCError();
     void showCommandInterfaceError();
@@ -27,7 +28,7 @@ public:
     void setDay(unsigned char day);
     void setYear(unsigned int year);
     void setHourAndMinute(unsigned char hour, unsigned char minute);
-
+    uint8_t getSegmentsMax();
 private:
     unsigned char row = 0;
     Display display1rowBottom = Display(CLK_DISPLAY1_ROW_BOTTOM, DIO);
@@ -44,6 +45,7 @@ private:
                                         {&display1rowTop,    &display2rowTop,    &display3rowTop}};
     const unsigned int displayRows = 3;
     const unsigned int displayColumns = 3;
+    uint8_t segmentsMax = 54;
 };
 
 #endif //DISPLAYPANEL_H

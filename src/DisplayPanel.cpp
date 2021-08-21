@@ -42,6 +42,33 @@ void DisplayPanel::clear()
     }
 }
 
+void DisplayPanel::setSegments(const uint8_t segments[], uint8_t length, uint8_t pos)
+{
+  if(pos > segmentsMax-1)
+    pos = segmentsMax-1;
+
+  if((pos + length) > segmentsMax)
+    length = segmentsMax - pos;
+
+  for(int i = 0; i < length; i++)
+  {
+    uint8_t numDisplay = (pos+i) / displays[0][0]->getSegmentsMax();
+    uint8_t displayPos = (pos+i) % displays[0][0]->getSegmentsMax();
+    uint8_t row =         numDisplay / displayRows;
+    uint8_t column =      numDisplay % displayColumns;
+
+    uint8_t lengthThisDisplay = displays[0][0]->getSegmentsMax() - displayPos;
+    if((length - i) < lengthThisDisplay) lengthThisDisplay = (length - i);
+
+    char mystr[100];
+    sprintf(mystr, "displays[%d][%d]->setSegments(segments+%d, %d, %d);", row, column, i, lengthThisDisplay, displayPos);
+    Serial.println(mystr);
+    displays[row][column]->setSegments(segments+i, lengthThisDisplay, displayPos);
+
+    i += lengthThisDisplay-1;
+  }
+}
+
 void DisplayPanel::setBrightness(unsigned char row, unsigned char column, unsigned char brightness, bool on)
 {
   if(row > displayRows) row = 0;
@@ -214,4 +241,9 @@ void DisplayPanel::setHourAndMinute(unsigned char hour, unsigned char minute)
   digits[3] &= ~SEG_DP;
 
   displays[row][2]->setSegments(digits, 5, 0);
+}
+
+uint8_t DisplayPanel::getSegmentsMax()
+{
+  return segmentsMax;
 }

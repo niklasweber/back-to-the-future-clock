@@ -17,28 +17,33 @@ CommandInterface commandInterface;
 
 void onSetSegments(cmd_set_segments& cmd)
 {
-    Serial.print("CMD_SET_SEGMENT ");
+    if(cmd.startPos + cmd.length > displayPanel.getSegmentsMax())
+        return;
 
-    Serial.print(cmd.preamble[0]);
-    Serial.print(" ");
-    Serial.print(cmd.preamble[1]);
-    Serial.print(" ");
-    Serial.print(cmd.preamble[2]);
-    Serial.print(" ");
-    Serial.print(cmd.preamble[3]);
-    Serial.print(" ");
-    Serial.print(cmd.cmd);
-    Serial.print(" ");
-    Serial.print(cmd.length);
-    Serial.print(" ");
-    Serial.print(cmd.startPos);
-    Serial.print(" ");
-    for(int i=0; i<25; i++)
-    {
-        Serial.print(cmd.segments[i]);
-        Serial.print(" ");
-    }
-    Serial.println();
+    displayPanel.setSegments(cmd.segments, cmd.length, cmd.startPos);
+
+    // Serial.print("CMD_SET_SEGMENT ");
+
+    // Serial.print(cmd.preamble[0]);
+    // Serial.print(" ");
+    // Serial.print(cmd.preamble[1]);
+    // Serial.print(" ");
+    // Serial.print(cmd.preamble[2]);
+    // Serial.print(" ");
+    // Serial.print(cmd.preamble[3]);
+    // Serial.print(" ");
+    // Serial.print(cmd.cmd);
+    // Serial.print(" ");
+    // Serial.print(cmd.length);
+    // Serial.print(" ");
+    // Serial.print(cmd.startPos);
+    // Serial.print(" ");
+    // for(int i=0; i<25; i++)
+    // {
+    //     Serial.print(cmd.segments[i]);
+    //     Serial.print(" ");
+    // }
+    // Serial.println();
 }
 
 void setup()
@@ -139,12 +144,12 @@ void loop()
     //     minute(),
     //     second());
 
-    // // Set middle row to current system time
-    displayPanel.setRow(1);
-    displayPanel.setDay(day());
-    displayPanel.setMonth(month());
-    displayPanel.setYear(year());
-    displayPanel.setHourAndMinute(hour(), minute());
+    // // // Set middle row to current system time
+    // displayPanel.setRow(1);
+    // displayPanel.setDay(day());
+    // displayPanel.setMonth(month());
+    // displayPanel.setYear(year());
+    // displayPanel.setHourAndMinute(hour(), minute());
 
     // Serial.print(timeStr1);
     // Serial.println(timeStr2);

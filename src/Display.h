@@ -13,6 +13,7 @@ public:
     void setDigits(uint8_t digits[], uint8_t length = 4, uint8_t pos = 0);
     uint8_t encodeDigit(uint8_t digit);
     void setBrightness(uint8_t brightness, bool on = true);
+    uint8_t getSegmentsMax();
 private:
     TM1637Display hw;
     uint8_t segments[6];

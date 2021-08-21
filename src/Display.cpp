@@ -12,10 +12,10 @@ void Display::setSegments(const uint8_t segments[], uint8_t length, uint8_t pos)
     memcpy(this->segments+pos, segments, length);
 
     // Due to limitation of display library, pos cannot be larger than 4. Bypass by starting at 4.
-    if(pos > 4)
+    if(pos > 3)
     {
-        length += pos - 4;
-        pos = 4;
+        length += pos - 3;
+        pos = 3;
     }
     hw.setSegments(segments, length, pos);
 }
@@ -39,4 +39,9 @@ void Display::setBrightness(uint8_t brightness, bool on)
     this->brightness = brightness;
     this->powerOn = on;
     hw.setBrightness(brightness, on);
+}
+
+uint8_t Display::getSegmentsMax()
+{
+    return segmentsMax;
 }

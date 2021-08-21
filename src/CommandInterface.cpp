@@ -59,9 +59,6 @@ void CommandInterface::handleInput()
             if(cmd.length > 25)
                 break;
 
-            if(cmd.startPos + cmd.length > 36)
-                break;
-
             onSetSegmentsPtr(cmd);
             break;
         }
