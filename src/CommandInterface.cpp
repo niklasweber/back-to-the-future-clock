@@ -1,8 +1,10 @@
 #include "CommandInterface.h"
 
-uint8_t CommandInterface::begin(void (*onSetSegmentsPtr)(cmd_set_segments&))
+uint8_t CommandInterface::begin(void (*onSetSegmentsPtr)(cmd_set_segments&),
+                                void (*onShowTimePtr)(cmd_show_time&))
 {
     this->onSetSegmentsPtr = onSetSegmentsPtr;
+    this->onShowTimePtr = onShowTimePtr;
 
     // initialize the transceiver on the SPI bus
     if (!radio.begin())
@@ -35,7 +37,7 @@ void CommandInterface::handleInput()
     {
         radio.failureDetected = false;
         delay(250);
-        begin(onSetSegmentsPtr);
+        begin(onSetSegmentsPtr, onShowTimePtr);
     }
 
     uint8_t payload[32] = {0};
@@ -63,15 +65,17 @@ void CommandInterface::handleInput()
             break;
         }
         case CMD_PLAY_SOUND:
-            Serial.print("CMD_PLAY_SOUND ");
+            // Serial.print("CMD_PLAY_SOUND ");
             break;
 
-        case CMD_DISABLE_DCF77:
-            Serial.print("CMD_DISABLE_DCF77 ");
+        case CMD_SHOW_TIME:
+        {
+            cmd_show_time& cmd = reinterpret_cast<cmd_show_time&>(payload);
+            onShowTimePtr(cmd);
             break;
-
+        }
         default:
-            Serial.print("Unknown command ");
+            // Serial.print("Unknown command ");
             break;
         }
     }
