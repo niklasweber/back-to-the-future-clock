@@ -28,7 +28,6 @@ struct cmd_show_time
     uint8_t cmd;
     uint8_t on;
     uint8_t row;
-    uint8_t showDCF77DebugSignal;
     uint8_t unused[24];
 };
 

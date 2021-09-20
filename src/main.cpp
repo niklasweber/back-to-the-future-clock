@@ -12,7 +12,6 @@ CommandInterface commandInterface;
 
 bool showTime = true;
 uint8_t timeRow = 1;
-bool showDCF77Debug = false;
 
 void onSetSegments(cmd_set_segments& cmd)
 {
@@ -34,9 +33,6 @@ void onShowTime(cmd_show_time& cmd)
         if(cmd.row >= displayPanel.getRows())
             cmd.row = displayPanel.getRows()-1;
     }
-
-    if(cmd.showDCF77DebugSignal) showDCF77Debug = true;
-    else                         showDCF77Debug = false;
 }
 
 void setup()
