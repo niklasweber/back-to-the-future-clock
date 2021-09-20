@@ -1,13 +1,6 @@
 #include "DisplayPanel.h"
 #include <Arduino.h>
 
-// const uint8_t SEG_DONE[] = {
-// 	SEG_B | SEG_C | SEG_D | SEG_E | SEG_G,           // d
-// 	SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F,   // O
-// 	SEG_C | SEG_E | SEG_G,                           // n
-// 	SEG_A | SEG_D | SEG_E | SEG_F | SEG_G            // E
-// };
-
 void DisplayPanel::begin()
 {
   uint8_t all_on[]  = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
@@ -20,14 +13,6 @@ void DisplayPanel::begin()
       displays[i][j]->setSegments(all_on, 6);
     }
   }
-  
-	// // Run through all the dots
-	// for(int k=0; k <= 4; k++) {
-	// 	displays[1][2]->showNumberDecEx(0, (0x80 >> k), true);
-	// 	delay(TEST_DELAY);
-	// }
-
-  //displays[1][2]->setBrightness(k);
 }
 
 void DisplayPanel::clear()
@@ -257,6 +242,3 @@ uint8_t DisplayPanel::getColumns()
 {
   return displayColumns;
 }
-
-// TODO: Save displayPanel data internally, check if content changed, only update displayPanel if content changed.
-// TODO: For setday, setmonth etc, use setSegments instead of displays directly
