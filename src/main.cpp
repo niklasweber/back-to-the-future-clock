@@ -1,17 +1,19 @@
 #include <Arduino.h>
-#include "TimeKeeper.h"
+#include <RTClib.h>
+#include <TimeLib.h>
 #include "DisplayPanel.h"
 #include "CommandInterface.h"
 
 
 #define BOOT_MIN_TIME 2000
 
-TimeKeeper timeKeeper;
+RTC_DS3231 rtc;
 DisplayPanel displayPanel;
 CommandInterface commandInterface;
 
 bool showTime = true;
 uint8_t timeRow = 1;
+uint8_t messageRow = 1;
 
 void onSetSegments(cmd_set_segments& cmd)
 {
@@ -41,12 +43,14 @@ void setup()
 
     // Serial.begin(9600);
     // Serial.println("Back to the future clock - Start");
-    
-    timeKeeper.begin();
 
-    if(!timeKeeper.hasHWClock())
+    if(rtc.begin()) 
     {
-        displayPanel.setRow(1);
+        setTime(rtc.now().unixtime());
+    }
+    else
+    {
+        displayPanel.setRow(messageRow);
         displayPanel.showRTCError();
         delay(2000);
     }
