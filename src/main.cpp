@@ -10,10 +10,9 @@ TimeKeeper timeKeeper;
 DisplayPanel displayPanel;
 CommandInterface commandInterface;
 
-// Make LED blink on DCF77 signal
-// void dcf77IntHandler() {
-//     digitalWrite(LED_BUILTIN, digitalRead(DCF77_PIN));
-// }
+bool showTime = true;
+uint8_t timeRow = 1;
+bool showDCF77Debug = false;
 
 void onSetSegments(cmd_set_segments& cmd)
 {
@@ -21,44 +20,33 @@ void onSetSegments(cmd_set_segments& cmd)
         return;
 
     displayPanel.setSegments(cmd.segments, cmd.length, cmd.startPos);
+}
 
-    // Serial.print("CMD_SET_SEGMENT ");
+void onShowTime(cmd_show_time& cmd)
+{
+    // Serial.println("onShowTime");
 
-    // Serial.print(cmd.preamble[0]);
-    // Serial.print(" ");
-    // Serial.print(cmd.preamble[1]);
-    // Serial.print(" ");
-    // Serial.print(cmd.preamble[2]);
-    // Serial.print(" ");
-    // Serial.print(cmd.preamble[3]);
-    // Serial.print(" ");
-    // Serial.print(cmd.cmd);
-    // Serial.print(" ");
-    // Serial.print(cmd.length);
-    // Serial.print(" ");
-    // Serial.print(cmd.startPos);
-    // Serial.print(" ");
-    // for(int i=0; i<25; i++)
-    // {
-    //     Serial.print(cmd.segments[i]);
-    //     Serial.print(" ");
-    // }
-    // Serial.println();
+    if(!cmd.on)
+        showTime = false;
+    else
+    {
+        showTime = true;
+        if(cmd.row >= displayPanel.getRows())
+            cmd.row = displayPanel.getRows()-1;
+    }
+
+    if(cmd.showDCF77DebugSignal) showDCF77Debug = true;
+    else                         showDCF77Debug = false;
 }
 
 void setup()
 {
     displayPanel.begin();
 
-    Serial.begin(9600);
-    Serial.println("Back to the future clock - Start");
+    // Serial.begin(9600);
+    // Serial.println("Back to the future clock - Start");
     
     timeKeeper.begin();
-
-    // TODO: Make DCF77 signal visible on Display (in debugging mode)
-    // // DCF77 signal LED (for debugging / positioning)
-    // pinMode(LED_BUILTIN, OUTPUT);
-    // attachInterrupt(DCF77_INTERRUPT, dcf77IntHandler, CHANGE);
 
     if(!timeKeeper.hasHWClock())
     {
@@ -67,7 +55,7 @@ void setup()
         delay(2000);
     }
 
-    if(!commandInterface.begin(&onSetSegments))
+    if(!commandInterface.begin(&onSetSegments, &onShowTime))
     {
         displayPanel.setRow(1);
         displayPanel.showCommandInterfaceError();
@@ -103,59 +91,17 @@ void setup()
     displayPanel.setHourAndMinute(6, 38);
 }
 
-// char timeStr1[40];
-// char timeStr2[40];
-
 void loop() 
 {
     commandInterface.handleInput();
 
-    if(timeKeeper.pollTimeUpdate())
+    // Set middle row to current system time
+    if(showTime)
     {
-        Serial.println("Time updated!");
-
-        // On bottom row, show when time was last updated
-        displayPanel.setRow(0);
+        displayPanel.setRow(timeRow);
         displayPanel.setDay(day());
         displayPanel.setMonth(month());
         displayPanel.setYear(year());
         displayPanel.setHourAndMinute(hour(), minute());
     }
-
-    // if(timeKeeper.hasHWClock())
-    // {
-    //     DateTime hwTime = timeKeeper.getHWTime();
-    //     sprintf(timeStr1, "HW: %02d.%02d.%04d %02d:%02d:%02d ",
-    //         hwTime.day(),
-    //         hwTime.month(),
-    //         hwTime.year(),
-    //         hwTime.hour(),
-    //         hwTime.minute(),
-    //         hwTime.second());
-    // }
-    // else
-    //     sprintf(timeStr1, "No HW Clock! ");
-
-    // sprintf(timeStr2, "SW: %02d.%02d.%04d %02d:%02d:%02d ", 
-    //     day(),
-    //     month(),
-    //     year(),
-    //     hour(),
-    //     minute(),
-    //     second());
-
-    // // // Set middle row to current system time
-    // displayPanel.setRow(1);
-    // displayPanel.setDay(day());
-    // displayPanel.setMonth(month());
-    // displayPanel.setYear(year());
-    // displayPanel.setHourAndMinute(hour(), minute());
-
-    // Serial.print(timeStr1);
-    // Serial.println(timeStr2);
-
-    // delay(1000);
 }
-
-
-// TODO: Save displayPanel data internally, check if content changed, only update displayPanel if content changed.

@@ -16,7 +16,7 @@ void DisplayPanel::begin()
   {
     for(unsigned int j=0; j<displayColumns; j++)
     {
-      displays[i][j]->setBrightness(0xFF);
+      setBrightness(i, j, 7);
       displays[i][j]->setSegments(all_on, 6);
     }
   }
@@ -62,7 +62,7 @@ void DisplayPanel::setSegments(const uint8_t segments[], uint8_t length, uint8_t
 
     char mystr[100];
     sprintf(mystr, "displays[%d][%d]->setSegments(segments+%d, %d, %d);", row, column, i, lengthThisDisplay, displayPos);
-    Serial.println(mystr);
+    // Serial.println(mystr);
     displays[row][column]->setSegments(segments+i, lengthThisDisplay, displayPos);
 
     i += lengthThisDisplay-1;
@@ -247,3 +247,16 @@ uint8_t DisplayPanel::getSegmentsMax()
 {
   return segmentsMax;
 }
+
+uint8_t DisplayPanel::getRows()
+{
+  return displayRows;
+}
+
+uint8_t DisplayPanel::getColumns()
+{
+  return displayColumns;
+}
+
+// TODO: Save displayPanel data internally, check if content changed, only update displayPanel if content changed.
+// TODO: For setday, setmonth etc, use setSegments instead of displays directly

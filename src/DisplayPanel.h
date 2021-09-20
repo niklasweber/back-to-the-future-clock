@@ -29,6 +29,8 @@ public:
     void setYear(unsigned int year);
     void setHourAndMinute(unsigned char hour, unsigned char minute);
     uint8_t getSegmentsMax();
+    uint8_t getRows();
+    uint8_t getColumns();
 private:
     unsigned char row = 0;
     Display display1rowBottom = Display(CLK_DISPLAY1_ROW_BOTTOM, DIO);
