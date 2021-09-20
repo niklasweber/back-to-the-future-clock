@@ -61,6 +61,17 @@ void DisplayPanel::setBrightness(unsigned char row, unsigned char column, unsign
   displays[row][column]->setBrightness(brightness, on);
 }
 
+void DisplayPanel::setBrightnessAll(unsigned char brightness, bool on = true)
+{
+  for(unsigned int i=0; i<displayRows; i++)
+  {
+    for(unsigned int j=0; j<displayColumns; j++)
+    {
+      setBrightness(i, j, brightness, on);
+    }
+  }
+}
+
 void DisplayPanel::showRTCError()
 {
   const uint8_t disp1[] = {

@@ -21,6 +21,7 @@ public:
     void clear();
     void setSegments(const uint8_t segments[], uint8_t length, uint8_t pos = 0);
     void setBrightness(unsigned char row, unsigned char column, unsigned char brightness, bool on = true);
+    void setBrightnessAll(unsigned char brightness, bool on = true);
     void showRTCError();
     void showCommandInterfaceError();
     void setRow(unsigned int row);

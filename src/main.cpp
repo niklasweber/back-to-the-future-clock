@@ -4,9 +4,13 @@
 #include "DisplayPanel.h"
 #include "CommandInterface.h"
 
+#include <BH1750.h>
+#include <Wire.h>
+
 
 #define BOOT_MIN_TIME 2000
 
+BH1750 lightMeter;
 RTC_DS3231 rtc;
 DisplayPanel displayPanel;
 CommandInterface commandInterface;
@@ -41,8 +45,10 @@ void setup()
 {
     displayPanel.begin();
 
-    // Serial.begin(9600);
-    // Serial.println("Back to the future clock - Start");
+    Serial.begin(9600);
+    Serial.println("Back to the future clock - Start");
+
+    Wire.begin();
 
     if(rtc.begin()) 
     {
@@ -54,6 +60,8 @@ void setup()
         displayPanel.showRTCError();
         delay(2000);
     }
+
+    lightMeter.begin();
 
     if(!commandInterface.begin(&onSetSegments, &onShowTime))
     {
@@ -104,4 +112,20 @@ void loop()
         displayPanel.setYear(year());
         displayPanel.setHourAndMinute(hour(), minute());
     }
+
+    float lux = lightMeter.readLightLevel();
+    Serial.print("Light: ");
+    Serial.print(lux);
+    Serial.println(" lx");
+
+    if(lux > 5)
+    {
+        displayPanel.setBrightnessAll(7);
+    }
+    else
+    {
+        displayPanel.setBrightnessAll(1);
+    }
+
+    delay(1000);
 }
