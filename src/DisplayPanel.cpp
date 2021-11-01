@@ -61,7 +61,7 @@ void DisplayPanel::setBrightness(unsigned char row, unsigned char column, unsign
   displays[row][column]->setBrightness(brightness, on);
 }
 
-void DisplayPanel::setBrightnessAll(unsigned char brightness, bool on = true)
+void DisplayPanel::setBrightnessAll(unsigned char brightness, bool on)
 {
   for(unsigned int i=0; i<displayRows; i++)
   {
@@ -112,6 +112,32 @@ void DisplayPanel::showCommandInterfaceError()
   displays[row][0]->setSegments(disp1);
   displays[row][1]->setSegments(disp2);
   displays[row][2]->setSegments(all_off, 5);
+}
+
+void DisplayPanel::showSoundError(int error_code)
+{
+  const uint8_t disp1[] = {
+    SEG_A | SEG_D | SEG_E | SEG_F | SEG_G,   // E
+    SEG_E | SEG_G,                           // r
+    SEG_E | SEG_G,                           // r
+    0x00
+  };
+  const uint8_t disp2[] = {
+    SEG_A | SEG_C | SEG_D | SEG_F | SEG_G,  // S
+    SEG_C | SEG_E | SEG_G,                  // n
+    SEG_B | SEG_C | SEG_D | SEG_E | SEG_G,  // d
+    0x00
+  };
+  const uint8_t disp3[] = {
+    displays[row][0]->encodeDigit((error_code / 1000) % 10 ),
+    displays[row][0]->encodeDigit((error_code / 100) % 10 ),
+    displays[row][0]->encodeDigit((error_code / 10) % 10 ),
+    displays[row][0]->encodeDigit( error_code % 10 )
+  };
+
+  displays[row][0]->setSegments(disp1);
+  displays[row][1]->setSegments(disp2);
+  displays[row][2]->setSegments(disp3);
 }
 
 void DisplayPanel::setRow(unsigned int row)

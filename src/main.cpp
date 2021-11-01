@@ -6,6 +6,7 @@
 
 #include <BH1750.h>
 #include <Wire.h>
+#include <DFRobot_DF1201S.h>
 
 
 #define BOOT_MIN_TIME 2000
@@ -14,6 +15,7 @@ BH1750 lightMeter;
 RTC_DS3231 rtc;
 DisplayPanel displayPanel;
 CommandInterface commandInterface;
+DFRobot_DF1201S soundModule;
 
 bool showTime = true;
 uint8_t timeRow = 1;
@@ -41,12 +43,27 @@ void onShowTime(cmd_show_time& cmd)
     }
 }
 
+char inData[20]; // Allocate some space for the string
+char inChar=-1; // Where to store the character read
+byte index = 0; // Index into array; where to store the character
+
+int initSoundModule()
+{
+    if(!soundModule.begin(Serial)) return 1;
+    delay(100);
+    if(!soundModule.setVol(1)) return 2;
+    if(!soundModule.switchFunction(soundModule.MUSIC)) return 3;
+    if(!soundModule.setPlayMode(soundModule.SINGLE)) return 4;
+    if(!soundModule.setLED(false)) return 5;
+    if(!soundModule.setPrompt(false)) return 6;
+    if(!soundModule.enableAMP()) return 7;
+
+    return 0;
+}
+
 void setup()
 {
     displayPanel.begin();
-
-    Serial.begin(9600);
-    Serial.println("Back to the future clock - Start");
 
     Wire.begin();
 
@@ -73,9 +90,20 @@ void setup()
         // TODO: Keep system alive, but handle with care. Check if radio has been initialized everywhere.
     }
 
+    Serial.begin(115200);
+    int rc = initSoundModule();
+    if(rc != 0)
+    {
+        displayPanel.setRow(messageRow);
+        displayPanel.showSoundError(rc);
+        delay(3000);
+    }
+
     if(unsigned long m = millis() < BOOT_MIN_TIME) delay(BOOT_MIN_TIME - m);
     displayPanel.clear();
-    delay(500);
+
+    soundModule.playFileNum(1);
+    //save timestamp
 
     // Set top row to "26.10. 1985 AM 01:21"
     displayPanel.setRow(2);
@@ -114,9 +142,9 @@ void loop()
     }
 
     float lux = lightMeter.readLightLevel();
-    Serial.print("Light: ");
-    Serial.print(lux);
-    Serial.println(" lx");
+    // Serial.print("Light: ");
+    // Serial.print(lux);
+    // Serial.println(" lx");
 
     if(lux > 5)
     {
