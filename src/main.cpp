@@ -2,10 +2,9 @@
 #include <RTClib.h>
 #include <TimeLib.h>
 #include "DisplayPanel.h"
-// #include "CommandInterface.h"
+#include "CommandInterface.h"
 
 #include <BH1750.h>
-// #include <Wire.h>
 
 // set this in AudioConfig.h or here after installing https://github.com/pschatzmann/arduino-libhelix.git
 #define USE_HELIX
@@ -20,7 +19,7 @@ using namespace audio_tools;
 BH1750 lightMeter;
 RTC_DS3231 rtc;
 DisplayPanel displayPanel;
-// CommandInterface commandInterface;
+CommandInterface commandInterface;
 
 typedef int16_t sound_t;                        // sound will be represented as int16_t (with 2 bytes)
 uint16_t sample_rate=44100;
@@ -31,20 +30,35 @@ EncodedAudioStream decoder(&i2s, new MP3DecoderHelix()); // Decoding stream
 StreamCopy copier;                  // copies sound into i2s
 File audioFile;
 
-bool showTime = true;
+bool showTime = false;
 uint8_t timeRow = 1;
 uint8_t messageRow = 1;
 
-// void onSetSegments(cmd_set_segments& cmd)
-// {
-//     if(cmd.startPos + cmd.length > displayPanel.getSegmentsMax())
-//         return;
+void onSetSegment(std::string& data)
+{
+    if(data.length() != 2) return;
+    uint8_t segmentPos = data[0];
+    uint8_t segmentData = data[1];
+
+    Serial.print("WURST: ");
+    Serial.print(segmentPos);
+    Serial.print(" ");
+    Serial.println(segmentData);
+
+    // displayPanel.setSegments(&segmentData, 1, segmentPos);
+    displayPanel.setRow(messageRow);
+    displayPanel.setYear(segmentData);
+    //void DisplayPanel::setSegments(const uint8_t segments[], uint8_t length, uint8_t pos)
 
 //     displayPanel.setSegments(cmd.segments, cmd.length, cmd.startPos);
-// }
+}
 
-// void onShowTime(cmd_show_time& cmd)
-// {
+void onShowTime(std::string& data)
+{
+    Serial.println("onShowTime");
+    Serial.print(data.length());
+    Serial.print(" ");
+    Serial.println(data.c_str());
 //     // Serial.println("onShowTime");
 
 //     if(!cmd.on)
@@ -55,7 +69,43 @@ uint8_t messageRow = 1;
 //         if(cmd.row >= displayPanel.getRows())
 //             cmd.row = displayPanel.getRows()-1;
 //     }
-// }
+}
+
+void onSetBrightness(std::string& data)
+{
+    if(data.length() != 2) return;
+
+    Serial.println("onSetBrightness");
+    Serial.print(data.length());
+    Serial.print(" ");
+    Serial.println(data.c_str());
+
+    //displayPanel.setBrightnessAll();
+}
+
+void onSetTime(std::string& data)
+{
+    Serial.println("onSetTime");
+    Serial.print(data.length());
+    Serial.print(" ");
+    Serial.println(data.c_str());
+}
+
+void onSetVolume(std::string& data)
+{
+    Serial.println("onSetVolume");
+    Serial.print(data.length());
+    Serial.print(" ");
+    Serial.println(data.c_str());
+}
+
+void onSetPlayback(std::string& data)
+{
+    Serial.println("onSetPlayback");
+    Serial.print(data.length());
+    Serial.print(" ");
+    Serial.println(data.c_str());
+}
 
 void soundTask( void * parameter )
 {
@@ -104,7 +154,7 @@ void setup()
 
     if(rtc.begin()) 
     {
-        // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+        //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
         // rtc.adjust(DateTime(2022, 1, 6, 23, 59, 50));
         setTime(rtc.now().unixtime());
     }
@@ -126,6 +176,13 @@ void setup()
 //         while (1) {} // hold in infinite loop
 //         // TODO: Keep system alive, but handle with care. Check if radio has been initialized everywhere.
 //     }
+    commandInterface.setCallbackOnSetSegment(&onSetSegment);
+    commandInterface.setCallbackOnShowTime(&onShowTime);
+    commandInterface.setCallbackOnSetBrightness(&onSetBrightness);
+    commandInterface.setCallbackOnSetTime(&onSetTime);
+    commandInterface.setCallbackOnSetVolume(&onSetVolume);
+    commandInterface.setCallbackOnSetPlayback(&onSetPlayback);
+    commandInterface.begin();
 
 //     Serial.begin(115200);
 //     int rc = initSoundModule();
