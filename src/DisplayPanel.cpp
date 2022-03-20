@@ -1,6 +1,20 @@
 #include "DisplayPanel.h"
 #include <Arduino.h>
 
+void brightnessTask( void * parameter )
+{
+  DisplayPanel *displayPanel = (DisplayPanel *) parameter;
+
+  while (true)
+  {
+    float lux = displayPanel->getLightMeterValue();
+
+    if(lux < 5) displayPanel->setBrightnessAll(1);
+    else        displayPanel->setBrightnessAll(100);
+    delay(1000);
+  }
+}
+
 void DisplayPanel::begin()
 {
   uint8_t all_on[]  = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
@@ -9,10 +23,22 @@ void DisplayPanel::begin()
   {
     for(unsigned int j=0; j<displayColumns; j++)
     {
-      setBrightness(i, j, 7);
+      setBrightness(i, j, 100);
       displays[i][j]->setSegments(all_on, 6);
     }
   }
+
+  Wire.begin();
+  lightMeter.begin();
+  xTaskCreate(
+    brightnessTask,     /* Task function. */
+    "brightnessTask",   /* String with name of task. */
+    10000,              /* Stack size in bytes. */
+    this,               /* Parameter passed as input of the task */
+    1,                  /* Priority of the task. */
+    &autoBrightnessTask /* Task handle. */
+  );
+  vTaskSuspend(autoBrightnessTask);
 }
 
 void DisplayPanel::clear()
@@ -54,22 +80,40 @@ void DisplayPanel::setSegments(const uint8_t segments[], uint8_t length, uint8_t
   }
 }
 
-void DisplayPanel::setBrightness(unsigned char row, unsigned char column, unsigned char brightness, bool on)
+void DisplayPanel::setBrightness(unsigned char row, unsigned char column, unsigned char brightness)
 {
   if(row > displayRows) row = 0;
   if(column > displayColumns) column = 0;
-  displays[row][column]->setBrightness(brightness, on);
+  displays[row][column]->setBrightness(brightness);
 }
 
-void DisplayPanel::setBrightnessAll(unsigned char brightness, bool on)
+void DisplayPanel::setBrightnessAll(unsigned char brightness)
 {
   for(unsigned int i=0; i<displayRows; i++)
   {
     for(unsigned int j=0; j<displayColumns; j++)
     {
-      setBrightness(i, j, brightness, on);
+      setBrightness(i, j, brightness);
     }
   }
+}
+
+void DisplayPanel::setAutoBrightness(bool autoBrightness)
+{
+  if(autoBrightness)
+  {
+    vTaskResume(autoBrightnessTask);
+  }
+  else
+  {
+    vTaskSuspend(autoBrightnessTask);
+  }
+}
+
+float DisplayPanel::getLightMeterValue()
+{
+  // value in lux
+  return lightMeter.readLightLevel();
 }
 
 void DisplayPanel::showRTCError()

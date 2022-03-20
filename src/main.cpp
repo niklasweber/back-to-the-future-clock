@@ -4,8 +4,6 @@
 #include "DisplayPanel.h"
 #include "CommandInterface.h"
 
-#include <BH1750.h>
-
 // set this in AudioConfig.h or here after installing https://github.com/pschatzmann/arduino-libhelix.git
 #define USE_HELIX
 #include "SPIFFS.h"
@@ -16,7 +14,6 @@ using namespace audio_tools;
 
 #define BOOT_MIN_TIME 2000
 
-BH1750 lightMeter;
 RTC_DS3231 rtc;
 DisplayPanel displayPanel;
 CommandInterface commandInterface;
@@ -30,7 +27,7 @@ EncodedAudioStream decoder(&i2s, new MP3DecoderHelix()); // Decoding stream
 StreamCopy copier;                  // copies sound into i2s
 File audioFile;
 
-bool showTime = false;
+bool showTime = true;
 uint8_t timeRow = 1;
 uint8_t messageRow = 1;
 
@@ -74,13 +71,19 @@ void onShowTime(std::string& data)
 void onSetBrightness(std::string& data)
 {
     if(data.length() != 2) return;
+    bool autoBrightness = data[0];
 
-    Serial.println("onSetBrightness");
-    Serial.print(data.length());
-    Serial.print(" ");
-    Serial.println(data.c_str());
-
-    //displayPanel.setBrightnessAll();
+    if(autoBrightness)
+    {
+        uint8_t timeoutMinutes = data[1];
+        displayPanel.setAutoBrightness(true);
+    }
+    else
+    {
+        uint8_t brightness = data[1];
+        displayPanel.setAutoBrightness(false);
+        displayPanel.setBrightnessAll(brightness);
+    }
 }
 
 void onSetTime(std::string& data)
@@ -149,8 +152,7 @@ void setup()
     Serial.begin(115200);
 
     displayPanel.begin();
-
-    // Wire.begin();
+    displayPanel.setAutoBrightness(true);
 
     if(rtc.begin()) 
     {
@@ -164,8 +166,6 @@ void setup()
         displayPanel.showRTCError();
         delay(2000);
     }
-
-    lightMeter.begin();
 
 //     if(!commandInterface.begin(&onSetSegments, &onShowTime))
 //     {
@@ -239,8 +239,6 @@ void setup()
 
 void loop() 
 {
-//     commandInterface.handleInput();
-
     // Set middle row to current system time
     if(showTime)
     {
@@ -251,19 +249,5 @@ void loop()
         displayPanel.setHourAndMinute(hour(), minute());
     }
 
-    float lux = lightMeter.readLightLevel();
-    // Serial.print("Light: ");
-    // Serial.print(lux);
-    // Serial.println(" lx");
-
-    if(lux > 5)
-    {
-        displayPanel.setBrightnessAll(7);
-    }
-    else
-    {
-        displayPanel.setBrightnessAll(1);
-    }
-
-    delay(1000);
+    delay(100);
 }

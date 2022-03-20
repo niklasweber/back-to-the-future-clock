@@ -34,11 +34,20 @@ uint8_t Display::encodeDigit(uint8_t digit)
     return hw.encodeDigit(digit);
 }
 
-void Display::setBrightness(uint8_t brightness, bool on)
+void Display::setBrightness(uint8_t brightness)
 {
+    if(brightness > 100) brightness = 100;
     this->brightness = brightness;
-    this->powerOn = on;
-    hw.setBrightness(brightness, on);
+
+    if(brightness > 0)
+    {
+        brightness = map(brightness, 1, 100, 0, 7);
+        hw.setBrightness(brightness, true);
+    }
+    else
+    {
+        hw.setBrightness(0, false);
+    }
 }
 
 uint8_t Display::getSegmentsMax()

@@ -2,6 +2,8 @@
 #define DISPLAYPANEL_H
 
 #include "Display.h"
+#include <Wire.h>
+#include <BH1750.h>
 
 #define DIO 15 // TD0
 #define CLK_DISPLAY1_ROW_BOTTOM 33
@@ -20,8 +22,10 @@ public:
     void begin();
     void clear();
     void setSegments(const uint8_t segments[], uint8_t length, uint8_t pos = 0);
-    void setBrightness(unsigned char row, unsigned char column, unsigned char brightness, bool on = true);
-    void setBrightnessAll(unsigned char brightness, bool on = true);
+    void setBrightness(unsigned char row, unsigned char column, unsigned char brightness);
+    void setBrightnessAll(unsigned char brightness);
+    void setAutoBrightness(bool autoBrightness);
+    float getLightMeterValue();
     void showRTCError();
     void showCommandInterfaceError();
     void showSoundError(int error_code);
@@ -50,6 +54,9 @@ private:
     const unsigned int displayRows = 3;
     const unsigned int displayColumns = 3;
     uint8_t segmentsMax = 54;
+
+    BH1750 lightMeter;
+    TaskHandle_t autoBrightnessTask;
 };
 
 #endif //DISPLAYPANEL_H
