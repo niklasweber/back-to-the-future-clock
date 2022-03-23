@@ -25,6 +25,7 @@ void DisplayPanel::begin()
     {
       setBrightness(i, j, 100);
       displays[i][j]->setSegments(all_on, 6);
+      displays[i][j]->write();
     }
   }
 
@@ -49,6 +50,7 @@ void DisplayPanel::clear()
       for(unsigned int j=0; j<displayColumns; j++)
       {
         displays[i][j]->setSegments(all_off, 6);
+        displays[i][j]->write();
       }
     }
 }
@@ -75,6 +77,7 @@ void DisplayPanel::setSegments(const uint8_t segments[], uint8_t length, uint8_t
     sprintf(mystr, "displays[%d][%d]->setSegments(segments+%d, %d, %d);", row, column, i, lengthThisDisplay, displayPos);
     // Serial.println(mystr);
     displays[row][column]->setSegments(segments+i, lengthThisDisplay, displayPos);
+    displays[row][column]->write();
 
     i += lengthThisDisplay-1;
   }
@@ -133,8 +136,11 @@ void DisplayPanel::showRTCError()
   const uint8_t all_off[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
   displays[row][0]->setSegments(disp1);
+  displays[row][0]->write();
   displays[row][1]->setSegments(disp2);
+  displays[row][1]->write();
   displays[row][2]->setSegments(all_off, 6);
+  displays[row][2]->write();
 }
 
 void DisplayPanel::showCommandInterfaceError()
@@ -154,8 +160,11 @@ void DisplayPanel::showCommandInterfaceError()
   const uint8_t all_off[] = { 0x00, 0x00, 0x00, 0x00, 0x00 };
 
   displays[row][0]->setSegments(disp1);
+  displays[row][0]->write();
   displays[row][1]->setSegments(disp2);
+  displays[row][1]->write();
   displays[row][2]->setSegments(all_off, 5);
+  displays[row][2]->write();
 }
 
 void DisplayPanel::showSoundError(int error_code)
@@ -180,8 +189,11 @@ void DisplayPanel::showSoundError(int error_code)
   };
 
   displays[row][0]->setSegments(disp1);
+  displays[row][0]->write();
   displays[row][1]->setSegments(disp2);
+  displays[row][1]->write();
   displays[row][2]->setSegments(disp3);
+  displays[row][2]->write();
 }
 
 void DisplayPanel::setRow(unsigned int row)
@@ -209,6 +221,7 @@ void DisplayPanel::setMonth(unsigned char month)
   digits[1] |= SEG_DP;
 
   displays[row][0]->setSegments(digits, 2, 2);
+  displays[row][0]->write();
 }
 
 void DisplayPanel::setDay(unsigned char day)
@@ -230,6 +243,7 @@ void DisplayPanel::setDay(unsigned char day)
   digits[1] |= SEG_DP;
 
   displays[row][0]->setSegments(digits, 2, 0);
+  displays[row][0]->write();
 }
 
 void DisplayPanel::setYear(unsigned int year)
@@ -259,6 +273,7 @@ void DisplayPanel::setYear(unsigned int year)
   digits[3] &= ~SEG_DP;
 
   displays[row][1]->setSegments(digits);
+  displays[row][1]->write();
 }
 
 // Needs to be set together due to problem in TM1637 lib 
@@ -307,6 +322,7 @@ void DisplayPanel::setHourAndMinute(unsigned char hour, unsigned char minute)
   digits[3] &= ~SEG_DP;
 
   displays[row][2]->setSegments(digits, 5, 0);
+  displays[row][2]->write();
 }
 
 uint8_t DisplayPanel::getSegmentsMax()

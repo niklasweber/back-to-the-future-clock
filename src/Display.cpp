@@ -1,23 +1,51 @@
 #include "Display.h"
 #include <Arduino.h>
 
+void Display::write()
+{
+    if (hasChange)
+    {
+        uint8_t changeLength = changeMaxIndex - changeMinIndex + 1;
+
+        // Due to limitation of display library, pos cannot be larger than 4. Bypass by starting at 4.
+        if(changeMinIndex > 3)
+        {
+            changeLength += changeMinIndex - 3;
+            changeMinIndex = 3;
+        }
+        hw.setSegments(segments+changeMinIndex, changeLength, changeMinIndex);
+
+        changeMinIndex = segmentsMax - 1;
+        changeMaxIndex = 0;
+        hasChange = false;
+    }
+}
+
+// Only writes to buffer. Use write() to send segments to hardware.
 void Display::setSegments(const uint8_t segments[], uint8_t length, uint8_t pos)
 {
+    // Boundary checks
     if(pos > segmentsMax-1)
         pos = segmentsMax-1;
-
     if((pos + length) > segmentsMax)
         length = segmentsMax - pos;
 
-    memcpy(this->segments+pos, segments, length);
-
-    // Due to limitation of display library, pos cannot be larger than 4. Bypass by starting at 4.
-    if(pos > 3)
+    // Go through segments that should be changed
+    for(uint8_t i=0; i<length; i++)
     {
-        length += pos - 3;
-        pos = 3;
+        // Only pay attention if segments are different from previously set segments
+        if(this->segments[pos+i] != segments[i])
+        {
+            // Find min and max of changed fields
+            if(!hasChange || pos+i < changeMinIndex)
+                changeMinIndex = pos+i;
+            if(!hasChange || pos+i > changeMaxIndex)
+                changeMaxIndex = pos+i;
+
+            hasChange = true;
+            this->segments[pos+i] = segments[i];
+        }
     }
-    hw.setSegments(segments, length, pos);
 }
 
 void Display::setDigits(uint8_t digits[], uint8_t length, uint8_t pos)
