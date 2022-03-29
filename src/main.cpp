@@ -148,10 +148,10 @@ void soundTask( void * parameter )
 void setup()
 {
     WiFi.mode(WIFI_OFF);
-    //btStop();
     Serial.begin(115200);
 
     displayPanel.begin();
+    displayPanel.write();
     displayPanel.setAutoBrightness(true);
 
     if(rtc.begin()) 
@@ -164,18 +164,10 @@ void setup()
     {
         displayPanel.setRow(messageRow);
         displayPanel.showRTCError();
-        delay(2000);
+        displayPanel.write();
+        delay(3000);
     }
 
-//     if(!commandInterface.begin(&onSetSegments, &onShowTime))
-//     {
-//         displayPanel.setRow(1);
-//         displayPanel.showCommandInterfaceError();
-//         delay(2000);
-
-//         while (1) {} // hold in infinite loop
-//         // TODO: Keep system alive, but handle with care. Check if radio has been initialized everywhere.
-//     }
     commandInterface.setCallbackOnSetSegment(&onSetSegment);
     commandInterface.setCallbackOnShowTime(&onShowTime);
     commandInterface.setCallbackOnSetBrightness(&onSetBrightness);
@@ -183,15 +175,6 @@ void setup()
     commandInterface.setCallbackOnSetVolume(&onSetVolume);
     commandInterface.setCallbackOnSetPlayback(&onSetPlayback);
     commandInterface.begin();
-
-//     Serial.begin(115200);
-//     int rc = initSoundModule();
-//     if(rc != 0)
-//     {
-//         displayPanel.setRow(messageRow);
-//         displayPanel.showSoundError(rc);
-        // delay(3000);
-//     }
 
     if(unsigned long m = millis() < BOOT_MIN_TIME) delay(BOOT_MIN_TIME - m);
 
@@ -210,10 +193,12 @@ void setup()
     {
         displayPanel.setRow(messageRow);
         displayPanel.showSoundError(10);
+        displayPanel.write();
         delay(3000);
     }
 
     displayPanel.clear();
+    displayPanel.write();
 
     // Set top row to "26.10. 1985 AM 01:21"
     displayPanel.setRow(2);
@@ -235,6 +220,7 @@ void setup()
     displayPanel.setMonth(11);
     displayPanel.setYear(1955);
     displayPanel.setHourAndMinute(6, 38);
+    displayPanel.write();
 }
 
 void loop() 
@@ -247,7 +233,17 @@ void loop()
         displayPanel.setMonth(month());
         displayPanel.setYear(year());
         displayPanel.setHourAndMinute(hour(), minute());
+        displayPanel.write();
     }
 
     delay(100);
+    const uint8_t minus = 0x00 | SEG_G;
+    for(int i=18; i<=35; i++)
+    {
+        displayPanel.overwriteSegments(&minus, 1, i);
+        displayPanel.write();
+        delay(500);
+        displayPanel.resetSegments(1, i);
+        displayPanel.write();
+    }
 }

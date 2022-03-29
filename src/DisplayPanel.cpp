@@ -1,6 +1,13 @@
 #include "DisplayPanel.h"
 #include <Arduino.h>
 
+void updateTimeTask( void * parameter )
+{
+  while (true)
+  {
+  }
+}
+
 void brightnessTask( void * parameter )
 {
   DisplayPanel *displayPanel = (DisplayPanel *) parameter;
@@ -24,8 +31,7 @@ void DisplayPanel::begin()
     for(unsigned int j=0; j<displayColumns; j++)
     {
       setBrightness(i, j, 100);
-      displays[i][j]->setSegments(all_on, 6);
-      displays[i][j]->write();
+      displays[i][j]->setSegments(all_on, 6, 0, LAYER_TIME);
     }
   }
 
@@ -40,8 +46,18 @@ void DisplayPanel::begin()
     &autoBrightnessTask /* Task handle. */
   );
   vTaskSuspend(autoBrightnessTask);
+
+  xTaskCreate(
+    updateTimeTask,     /* Task function. */
+    "updateTimeTask",   /* String with name of task. */
+    10000,              /* Stack size in bytes. */
+    this,               /* Parameter passed as input of the task */
+    1,                  /* Priority of the task. */
+    NULL                /* Task handle. */
+  );
 }
 
+// Clear custom segments, time segments and segment masks.
 void DisplayPanel::clear()
 {
     uint8_t all_off[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
@@ -49,37 +65,113 @@ void DisplayPanel::clear()
     {
       for(unsigned int j=0; j<displayColumns; j++)
       {
-        displays[i][j]->setSegments(all_off, 6);
-        displays[i][j]->write();
+        for(unsigned int s=0; s<displays[row][0]->getSegmentsMax(); s++)
+        {
+          displays[i][j]->setActiveLayer(s, LAYER_TIME);
+        }
+        displays[i][j]->setSegments(all_off, 6, 0, LAYER_TIME);
+        displays[i][j]->setSegments(all_off, 6, 0, LAYER_OVERWRITE);
       }
     }
 }
 
-void DisplayPanel::setSegments(const uint8_t segments[], uint8_t length, uint8_t pos)
+void DisplayPanel::write()
 {
-  if(pos > segmentsMax-1)
-    pos = segmentsMax-1;
-
-  if((pos + length) > segmentsMax)
-    length = segmentsMax - pos;
-
-  for(int i = 0; i < length; i++)
+  for(unsigned int i=0; i<displayRows; i++)
   {
-    uint8_t numDisplay = (pos+i) / displays[0][0]->getSegmentsMax();
-    uint8_t displayPos = (pos+i) % displays[0][0]->getSegmentsMax();
+    for(unsigned int j=0; j<displayColumns; j++)
+    {
+      displays[i][j]->write();
+    }
+  }
+}
+
+// 9 displays * 6 segments each = 54 segments
+// Write segments across all 9 displays, starting at segment 0, top left
+// ending at segment 53 bottom right
+void DisplayPanel::overwriteSegments(const uint8_t segments[], uint8_t length, uint8_t pos)
+{
+  // Boundary checks
+  if(pos > segmentsMax-1)
+    return;
+  if((pos + length) > segmentsMax)
+    return;
+
+  // Handle segments in blocks (segments for each display).
+  for(int segmentIterator = 0; segmentIterator < length; segmentIterator++)
+  {
+    // Which display is at "pos"? Example:
+    // pos 0-5=display 0, pos 6-11=display1, pos 12-17=display2, ...
+    uint8_t numDisplay = (pos+segmentIterator) / displays[0][0]->getSegmentsMax();
+
+    // Determine row and column from previously determined display number
     uint8_t row =         numDisplay / displayRows;
     uint8_t column =      numDisplay % displayColumns;
 
+    // Segment position within corresponding display
+    // Example: pos=10: display 1, position 4 (0-indexed)
+    uint8_t displayPos = (pos+segmentIterator) % displays[0][0]->getSegmentsMax();
+
+    // How many bytes need to be written to this display?
+    // Do all segments need to be updated or just a few?
     uint8_t lengthThisDisplay = displays[0][0]->getSegmentsMax() - displayPos;
-    if((length - i) < lengthThisDisplay) lengthThisDisplay = (length - i);
+    if((length - segmentIterator) < lengthThisDisplay)
+      lengthThisDisplay = (length - segmentIterator);
 
-    char mystr[100];
-    sprintf(mystr, "displays[%d][%d]->setSegments(segments+%d, %d, %d);", row, column, i, lengthThisDisplay, displayPos);
-    // Serial.println(mystr);
-    displays[row][column]->setSegments(segments+i, lengthThisDisplay, displayPos);
-    displays[row][column]->write();
+    // Set segment masks / mark segments as custom segments, to avoid overwriting them
+    // with time data. To show time segments again, segment mask needs to be cleared.
+    for(int s=displayPos; s<displayPos+lengthThisDisplay; s++)
+    {
+      displays[row][column]->setActiveLayer(s, LAYER_OVERWRITE);
+    }
+    displays[row][column]->setSegments(segments+segmentIterator, lengthThisDisplay, displayPos, LAYER_OVERWRITE);
 
-    i += lengthThisDisplay-1;
+    // Skip over to next display.
+    segmentIterator += lengthThisDisplay-1;
+  }
+}
+
+void DisplayPanel::resetSegments(uint8_t length, uint8_t pos)
+{
+  // Boundary checks
+  if(pos > segmentsMax-1)
+    return;
+  if((pos + length) > segmentsMax)
+    return;
+
+  // Handle segments in blocks (segments for each display).
+  for(int segmentIterator = 0; segmentIterator < length; segmentIterator++)
+  {
+    // Which display is at "pos"? Example:
+    // pos 0-5=display 0, pos 6-11=display1, pos 12-17=display2, ...
+    uint8_t numDisplay = (pos+segmentIterator) / displays[0][0]->getSegmentsMax();
+
+    // Determine row and column from previously determined display number
+    uint8_t row =         numDisplay / displayRows;
+    uint8_t column =      numDisplay % displayColumns;
+
+    // Segment position within corresponding display
+    // Example: pos=10: display 1, position 4 (0-indexed)
+    uint8_t displayPos = (pos+segmentIterator) % displays[0][0]->getSegmentsMax();
+
+    // How many bytes need to be written to this display?
+    // Do all segments need to be updated or just a few?
+    uint8_t lengthThisDisplay = displays[0][0]->getSegmentsMax() - displayPos;
+
+    // It might be that not all bytes until the end of the display need to be written.
+    // For example at the end of all bytes to be written. If needed, shorten length.
+    if((length - segmentIterator) < lengthThisDisplay)
+      lengthThisDisplay = (length - segmentIterator);
+
+    // Set segment masks / mark segments as custom segments, to avoid overwriting them
+    // with time data. To show time segments again, segment mask needs to be cleared.
+    for(int s=displayPos; s<displayPos+lengthThisDisplay; s++)
+    {
+      displays[row][column]->setActiveLayer(s, LAYER_TIME);
+    }
+
+    // Skip over to next display.
+    segmentIterator += lengthThisDisplay-1;
   }
 }
 
@@ -135,36 +227,9 @@ void DisplayPanel::showRTCError()
   };
   const uint8_t all_off[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
-  displays[row][0]->setSegments(disp1);
-  displays[row][0]->write();
-  displays[row][1]->setSegments(disp2);
-  displays[row][1]->write();
-  displays[row][2]->setSegments(all_off, 6);
-  displays[row][2]->write();
-}
-
-void DisplayPanel::showCommandInterfaceError()
-{
-  const uint8_t disp1[] = {
-    SEG_A | SEG_D | SEG_E | SEG_F | SEG_G,   // E
-    SEG_E | SEG_G,                           // r
-    SEG_E | SEG_G,                           // r
-    0x00
-  };
-  const uint8_t disp2[] = {
-    SEG_E | SEG_G,                          // r
-    SEG_B | SEG_C | SEG_D | SEG_E | SEG_G,  // d
-    SEG_C,                                  // i
-    SEG_C | SEG_D | SEG_E | SEG_G           // o
-  };
-  const uint8_t all_off[] = { 0x00, 0x00, 0x00, 0x00, 0x00 };
-
-  displays[row][0]->setSegments(disp1);
-  displays[row][0]->write();
-  displays[row][1]->setSegments(disp2);
-  displays[row][1]->write();
-  displays[row][2]->setSegments(all_off, 5);
-  displays[row][2]->write();
+  displays[row][0]->setSegments(disp1, 4, 0, LAYER_TIME);
+  displays[row][1]->setSegments(disp2, 4, 0, LAYER_TIME);
+  displays[row][2]->setSegments(all_off, 6, 0, LAYER_TIME);
 }
 
 void DisplayPanel::showSoundError(int error_code)
@@ -188,12 +253,9 @@ void DisplayPanel::showSoundError(int error_code)
     displays[row][0]->encodeDigit( error_code % 10 )
   };
 
-  displays[row][0]->setSegments(disp1);
-  displays[row][0]->write();
-  displays[row][1]->setSegments(disp2);
-  displays[row][1]->write();
-  displays[row][2]->setSegments(disp3);
-  displays[row][2]->write();
+  displays[row][0]->setSegments(disp1, 4, 0, LAYER_TIME);
+  displays[row][1]->setSegments(disp2, 4, 0, LAYER_TIME);
+  displays[row][2]->setSegments(disp3, 4, 0, LAYER_TIME);
 }
 
 void DisplayPanel::setRow(unsigned int row)
@@ -220,8 +282,7 @@ void DisplayPanel::setMonth(unsigned char month)
   // Set dot
   digits[1] |= SEG_DP;
 
-  displays[row][0]->setSegments(digits, 2, 2);
-  displays[row][0]->write();
+  displays[row][0]->setSegments(digits, 2, 2, LAYER_TIME);
 }
 
 void DisplayPanel::setDay(unsigned char day)
@@ -242,8 +303,7 @@ void DisplayPanel::setDay(unsigned char day)
   // Set dot
   digits[1] |= SEG_DP;
 
-  displays[row][0]->setSegments(digits, 2, 0);
-  displays[row][0]->write();
+  displays[row][0]->setSegments(digits, 2, 0, LAYER_TIME);
 }
 
 void DisplayPanel::setYear(unsigned int year)
@@ -272,8 +332,7 @@ void DisplayPanel::setYear(unsigned int year)
   digits[2] &= ~SEG_DP;
   digits[3] &= ~SEG_DP;
 
-  displays[row][1]->setSegments(digits);
-  displays[row][1]->write();
+  displays[row][1]->setSegments(digits, 4, 0, LAYER_TIME);
 }
 
 // Needs to be set together due to problem in TM1637 lib 
@@ -321,8 +380,7 @@ void DisplayPanel::setHourAndMinute(unsigned char hour, unsigned char minute)
   digits[2] &= ~SEG_DP;
   digits[3] &= ~SEG_DP;
 
-  displays[row][2]->setSegments(digits, 5, 0);
-  displays[row][2]->write();
+  displays[row][2]->setSegments(digits, 5, 0, LAYER_TIME);
 }
 
 uint8_t DisplayPanel::getSegmentsMax()

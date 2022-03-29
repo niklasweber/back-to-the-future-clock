@@ -5,14 +5,16 @@
 #include <Wire.h>
 #include <BH1750.h>
 
-#define DIO 15 // TD0
+#define DIO 26
 #define CLK_DISPLAY1_ROW_BOTTOM 33
 #define CLK_DISPLAY2_ROW_BOTTOM 23
-#define CLK_DISPLAY3_ROW_BOTTOM 13 // TCK
+// #define CLK_DISPLAY3_ROW_BOTTOM 13 // TCK
+#define CLK_DISPLAY3_ROW_BOTTOM 23
 #define CLK_DISPLAY1_ROW_MIDDLE 27
 #define CLK_DISPLAY2_ROW_MIDDLE 25
 #define CLK_DISPLAY3_ROW_MIDDLE 32
-#define CLK_DISPLAY1_ROW_TOP 26
+// #define CLK_DISPLAY1_ROW_TOP 15 // TD0
+#define CLK_DISPLAY1_ROW_TOP 18
 #define CLK_DISPLAY2_ROW_TOP 18
 #define CLK_DISPLAY3_ROW_TOP 19
 
@@ -21,13 +23,14 @@ class DisplayPanel
 public:
     void begin();
     void clear();
-    void setSegments(const uint8_t segments[], uint8_t length, uint8_t pos = 0);
+    void write();
+    void overwriteSegments(const uint8_t segments[], uint8_t length, uint8_t pos = 0);
+    void resetSegments(uint8_t length, uint8_t pos = 0);
     void setBrightness(unsigned char row, unsigned char column, unsigned char brightness);
     void setBrightnessAll(unsigned char brightness);
     void setAutoBrightness(bool autoBrightness);
     float getLightMeterValue();
     void showRTCError();
-    void showCommandInterfaceError();
     void showSoundError(int error_code);
     void setRow(unsigned int row);
     void setMonth(unsigned char month);

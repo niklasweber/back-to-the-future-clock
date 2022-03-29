@@ -3,6 +3,26 @@
 
 void Display::write()
 {
+    // Get segments from active layers and find changes
+    bool hasChange = false;
+    uint8_t changeMinIndex;
+    uint8_t changeMaxIndex;
+    for(int s = 0; s<segmentsMax; s++)
+    {
+        uint8_t activeSegment = segments[activeLayers[s]][s];
+        if(activeSegments[s] != activeSegment)
+        {
+            // Find min and max of changed fields
+            if(!hasChange || s < changeMinIndex)
+                changeMinIndex = s;
+            if(!hasChange || s > changeMaxIndex)
+                changeMaxIndex = s;
+
+            activeSegments[s] = activeSegment;
+            hasChange = true;
+        }
+    }
+
     if (hasChange)
     {
         uint8_t changeLength = changeMaxIndex - changeMinIndex + 1;
@@ -13,48 +33,43 @@ void Display::write()
             changeLength += changeMinIndex - 3;
             changeMinIndex = 3;
         }
-        hw.setSegments(segments+changeMinIndex, changeLength, changeMinIndex);
 
-        changeMinIndex = segmentsMax - 1;
-        changeMaxIndex = 0;
-        hasChange = false;
+        hw.setSegments(activeSegments+changeMinIndex, changeLength, changeMinIndex);
     }
 }
 
+void Display::setActiveLayer(uint8_t segment, uint8_t layer)
+{
+    // Boundary checks
+    if(segment > segmentsMax-1)
+        segment = segmentsMax-1;
+    if(layer > layersMax-1)
+        layer = layersMax-1;
+
+    activeLayers[segment] = layer;
+}
+
 // Only writes to buffer. Use write() to send segments to hardware.
-void Display::setSegments(const uint8_t segments[], uint8_t length, uint8_t pos)
+void Display::setSegments(const uint8_t segments[], uint8_t length, uint8_t pos, uint8_t layer)
 {
     // Boundary checks
     if(pos > segmentsMax-1)
         pos = segmentsMax-1;
     if((pos + length) > segmentsMax)
         length = segmentsMax - pos;
+    if(layer > layersMax-1)
+        layer = layersMax-1;
 
-    // Go through segments that should be changed
-    for(uint8_t i=0; i<length; i++)
-    {
-        // Only pay attention if segments are different from previously set segments
-        if(this->segments[pos+i] != segments[i])
-        {
-            // Find min and max of changed fields
-            if(!hasChange || pos+i < changeMinIndex)
-                changeMinIndex = pos+i;
-            if(!hasChange || pos+i > changeMaxIndex)
-                changeMaxIndex = pos+i;
-
-            hasChange = true;
-            this->segments[pos+i] = segments[i];
-        }
-    }
+    memcpy(this->segments[layer]+pos, segments, length);
 }
 
-void Display::setDigits(uint8_t digits[], uint8_t length, uint8_t pos)
+void Display::setDigits(uint8_t digits[], uint8_t length, uint8_t pos, uint8_t layer)
 {
     for(int i=0; i<length; i++)
     {
         digits[i] = hw.encodeDigit(digits[i]);
     }
-    setSegments(digits, length, pos);
+    setSegments(digits, length, pos, layer);
 }
 
 uint8_t Display::encodeDigit(uint8_t digit)
