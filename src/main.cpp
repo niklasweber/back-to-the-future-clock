@@ -27,10 +27,6 @@ EncodedAudioStream decoder(&i2s, new MP3DecoderHelix()); // Decoding stream
 StreamCopy copier;                  // copies sound into i2s
 File audioFile;
 
-bool showTime = true;
-uint8_t timeRow = 1;
-uint8_t messageRow = 1;
-
 void onSetSegment(std::string& data)
 {
     if(data.length() != 2) return;
@@ -43,7 +39,7 @@ void onSetSegment(std::string& data)
     Serial.println(segmentData);
 
     // displayPanel.setSegments(&segmentData, 1, segmentPos);
-    displayPanel.setRow(messageRow);
+    displayPanel.setRow(1);
     displayPanel.setYear(segmentData);
     //void DisplayPanel::setSegments(const uint8_t segments[], uint8_t length, uint8_t pos)
 
@@ -162,7 +158,7 @@ void setup()
     }
     else
     {
-        displayPanel.setRow(messageRow);
+        displayPanel.setRow(1);
         displayPanel.showRTCError();
         displayPanel.write();
         delay(3000);
@@ -191,7 +187,7 @@ void setup()
     }
     else
     {
-        displayPanel.setRow(messageRow);
+        displayPanel.setRow(1);
         displayPanel.showSoundError(10);
         displayPanel.write();
         delay(3000);
@@ -206,6 +202,7 @@ void setup()
     displayPanel.setMonth(10);
     displayPanel.setYear(1985);
     displayPanel.setHourAndMinute(1, 21);
+    // TODO: Load times from SPIFFS
 
     // Set middle row to current system time
     displayPanel.setRow(1);
@@ -225,18 +222,6 @@ void setup()
 
 void loop() 
 {
-    // Set middle row to current system time
-    if(showTime)
-    {
-        displayPanel.setRow(timeRow);
-        displayPanel.setDay(day());
-        displayPanel.setMonth(month());
-        displayPanel.setYear(year());
-        displayPanel.setHourAndMinute(hour(), minute());
-        displayPanel.write();
-    }
-
-    delay(100);
     const uint8_t minus = 0x00 | SEG_G;
     for(int i=18; i<=35; i++)
     {

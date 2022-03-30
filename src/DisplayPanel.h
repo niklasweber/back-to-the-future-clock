@@ -4,6 +4,7 @@
 #include "Display.h"
 #include <Wire.h>
 #include <BH1750.h>
+#include <TimeLib.h>
 
 #define DIO 26
 #define CLK_DISPLAY1_ROW_BOTTOM 33

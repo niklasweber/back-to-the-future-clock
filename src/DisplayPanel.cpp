@@ -3,8 +3,17 @@
 
 void updateTimeTask( void * parameter )
 {
+  DisplayPanel *displayPanel = (DisplayPanel *) parameter;
+
   while (true)
   {
+    displayPanel->setRow(1);
+    displayPanel->setDay(day());
+    displayPanel->setMonth(month());
+    displayPanel->setYear(year());
+    displayPanel->setHourAndMinute(hour(), minute());
+    displayPanel->write();
+    delay(50);
   }
 }
 
