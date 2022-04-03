@@ -31,21 +31,23 @@ TaskHandle_t updateTimeTaskHandle;
 
 void onSetSegment(std::string& data)
 {
-    if(data.length() != 2) return;
-    uint8_t segmentPos = data[0];
-    uint8_t segmentData = data[1];
+    if(data.length() < 1) return;
+    // Indicates whether segment should be set or cleared
+    bool isSetSegment = data[0];
 
-    Serial.print("WURST: ");
-    Serial.print(segmentPos);
-    Serial.print(" ");
-    Serial.println(segmentData);
-
-    // displayPanel.setSegments(&segmentData, 1, segmentPos);
-    displayPanel.setRow(1);
-    displayPanel.setYear(segmentData);
-    //void DisplayPanel::setSegments(const uint8_t segments[], uint8_t length, uint8_t pos)
-
-//     displayPanel.setSegments(cmd.segments, cmd.length, cmd.startPos);
+    if(isSetSegment)
+    {
+        if(data.length() != 3) return;
+        uint8_t segmentPos = data[1];
+        uint8_t segmentData = data[2];
+        displayPanel.overwriteSegments(&segmentData, 1, segmentPos);
+    }
+    else // clear segment
+    {
+        if(data.length() != 2) return;
+        uint8_t segmentPos = data[1];
+        displayPanel.resetSegments(1, segmentPos);
+    }
 }
 
 void onSetBrightness(std::string& data)
@@ -231,13 +233,13 @@ void setup()
 
 void loop() 
 {
-    const uint8_t minus = 0x00 | SEG_G;
-    for(int i=18; i<=35; i++)
-    {
-        displayPanel.overwriteSegments(&minus, 1, i);
-        displayPanel.write();
-        delay(500);
-        displayPanel.resetSegments(1, i);
-        displayPanel.write();
-    }
+    // const uint8_t minus = 0x00 | SEG_G;
+    // for(int i=18; i<=35; i++)
+    // {
+    //     displayPanel.overwriteSegments(&minus, 1, i);
+    //     displayPanel.write();
+    //     delay(500);
+    //     displayPanel.resetSegments(1, i);
+    //     displayPanel.write();
+    // }
 }
