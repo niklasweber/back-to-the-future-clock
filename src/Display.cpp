@@ -23,8 +23,29 @@ void Display::write()
         }
     }
 
+    // If segments didn't change, but brightness did, at least one segment needs to be written
+    // in order for brightness to change on hardware.
+    if(!hasChange && (brightness != targetBrightness))
+    {
+        hasChange = true; // Segments didn't change, but brightness did
+        changeMinIndex = 0;
+        changeMaxIndex = 0;
+    }
+
     if (hasChange)
     {
+        // Set brightness first
+        if(this->targetBrightness > 0)
+        {
+            uint8_t mappedBrightness = map(this->targetBrightness, 1, 100, 0, 7);
+            hw.setBrightness(mappedBrightness, true);
+        }
+        else
+        {
+            hw.setBrightness(0, false);
+        }
+        this->brightness = this->targetBrightness;
+
         uint8_t changeLength = changeMaxIndex - changeMinIndex + 1;
 
         // Due to limitation of display library, pos cannot be larger than 4. Bypass by starting at 4.
@@ -79,18 +100,10 @@ uint8_t Display::encodeDigit(uint8_t digit)
 
 void Display::setBrightness(uint8_t brightness)
 {
-    if(brightness > 100) brightness = 100;
-    this->brightness = brightness;
+    if(brightness > 100)
+        brightness = 100;
 
-    if(brightness > 0)
-    {
-        brightness = map(brightness, 1, 100, 0, 7);
-        hw.setBrightness(brightness, true);
-    }
-    else
-    {
-        hw.setBrightness(0, false);
-    }
+    this->targetBrightness = brightness;
 }
 
 uint8_t Display::getSegmentsMax()

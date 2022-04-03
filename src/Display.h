@@ -35,6 +35,7 @@ private:
 
     uint8_t layersMax = 2;
     uint8_t brightness;
+    uint8_t targetBrightness;
 };
 
 #endif // DISPLAY_H
