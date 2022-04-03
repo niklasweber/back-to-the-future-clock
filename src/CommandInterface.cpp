@@ -103,10 +103,6 @@ void CommandInterface::onWrite(BLECharacteristic* pCharacteristic)
     {
         onSetSegmentPtr(data);
     }
-    else if(uuid.compare(SHOW_TIME_CHARACTERISTIC_UUD) == 0)
-    {
-        onShowTimePtr(data);
-    }
     else if(uuid.compare(BRIGHTNESS_CHARACTERISTIC_UUID) == 0)
     {
         onSetBrightnessPtr(data);
@@ -135,10 +131,6 @@ uint8_t CommandInterface::begin()
                                             SEGMENT_CHARACTERISTIC_UUID,
                                             BLECharacteristic::PROPERTY_WRITE
                                         );
-    BLECharacteristic *pShowTimeChar = pDisplayService->createCharacteristic(
-                                            SHOW_TIME_CHARACTERISTIC_UUD,
-                                            BLECharacteristic::PROPERTY_WRITE
-                                        );
     BLECharacteristic *pBrightnessChar = pDisplayService->createCharacteristic(
                                             BRIGHTNESS_CHARACTERISTIC_UUID,
                                             BLECharacteristic::PROPERTY_WRITE
@@ -163,7 +155,6 @@ uint8_t CommandInterface::begin()
     pServer->setCallbacks(this);
     
     pSegmentChar->setCallbacks(this);
-    pShowTimeChar->setCallbacks(this);
     pBrightnessChar->setCallbacks(this);
     pTimeChar->setCallbacks(this);
     pVolumeChar->setCallbacks(this);

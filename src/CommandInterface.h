@@ -8,7 +8,6 @@
 
 #define DISPLAY_SERVICE_UUID            "6a58cb2a-f8a2-4eea-b8d4-1c50c0f60d25"
 #define SEGMENT_CHARACTERISTIC_UUID     "f1c1b1ba-e230-4472-b6da-809f65e3233e"
-#define SHOW_TIME_CHARACTERISTIC_UUD    "4ef16da5-5bd3-485f-8f25-8218319d1bd0"
 #define BRIGHTNESS_CHARACTERISTIC_UUID  "237def27-170e-4383-8600-eddc4fc26725"
 
 #define TIME_SERVICE_UUID               "12a1c6e7-23f0-4117-911f-6b42872a1497"
@@ -78,17 +77,12 @@ class CommandInterface: public BLECharacteristicCallbacks, BLEServerCallbacks
 {
 public:
 //     CommandInterface() : radio(RADIO_CE_PIN, RADIO_CSN_PIN) {};
-//     uint8_t begin(void (*onSetSegmentsPtr)(cmd_set_segments&),
-//                   void (*onShowTimePtr)(cmd_show_time&));
+//     uint8_t begin(void (*onSetSegmentsPtr)(cmd_set_segments&);
     uint8_t begin();
 //     void handleInput();
     void setCallbackOnSetSegment(void (*onSetSegmentPtr)(std::string&))
     {
         this->onSetSegmentPtr = onSetSegmentPtr;
-    }
-    void setCallbackOnShowTime(void (*onShowTimePtr)(std::string&))
-    {
-        this->onShowTimePtr = onShowTimePtr;
     }
     void setCallbackOnSetBrightness(void (*onSetBrightnessPtr)(std::string&))
     {
@@ -115,7 +109,6 @@ private:
 	//virtual void onStatus(BLECharacteristic* pCharacteristic, Status s, uint32_t code);
 
     void (*onSetSegmentPtr)(std::string&);
-    void (*onShowTimePtr)(std::string&);
     void (*onSetBrightnessPtr)(std::string&);
     void (*onSetTimePtr)(std::string&);
     void (*onSetVolumePtr)(std::string&);

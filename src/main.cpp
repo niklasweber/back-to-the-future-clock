@@ -48,24 +48,6 @@ void onSetSegment(std::string& data)
 //     displayPanel.setSegments(cmd.segments, cmd.length, cmd.startPos);
 }
 
-void onShowTime(std::string& data)
-{
-    Serial.println("onShowTime");
-    Serial.print(data.length());
-    Serial.print(" ");
-    Serial.println(data.c_str());
-//     // Serial.println("onShowTime");
-
-//     if(!cmd.on)
-//         showTime = false;
-//     else
-//     {
-//         showTime = true;
-//         if(cmd.row >= displayPanel.getRows())
-//             cmd.row = displayPanel.getRows()-1;
-//     }
-}
-
 void onSetBrightness(std::string& data)
 {
     if(data.length() != 2) return;
@@ -183,7 +165,6 @@ void setup()
     }
 
     commandInterface.setCallbackOnSetSegment(&onSetSegment);
-    commandInterface.setCallbackOnShowTime(&onShowTime);
     commandInterface.setCallbackOnSetBrightness(&onSetBrightness);
     commandInterface.setCallbackOnSetTime(&onSetTime);
     commandInterface.setCallbackOnSetVolume(&onSetVolume);
