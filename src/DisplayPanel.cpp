@@ -1,22 +1,6 @@
 #include "DisplayPanel.h"
 #include <Arduino.h>
 
-void updateTimeTask( void * parameter )
-{
-  DisplayPanel *displayPanel = (DisplayPanel *) parameter;
-
-  while (true)
-  {
-    displayPanel->setRow(1);
-    displayPanel->setDay(day());
-    displayPanel->setMonth(month());
-    displayPanel->setYear(year());
-    displayPanel->setHourAndMinute(hour(), minute());
-    displayPanel->write();
-    delay(50);
-  }
-}
-
 void brightnessTask( void * parameter )
 {
   DisplayPanel *displayPanel = (DisplayPanel *) parameter;
@@ -55,15 +39,6 @@ void DisplayPanel::begin()
     &autoBrightnessTask /* Task handle. */
   );
   vTaskSuspend(autoBrightnessTask);
-
-  xTaskCreate(
-    updateTimeTask,     /* Task function. */
-    "updateTimeTask",   /* String with name of task. */
-    10000,              /* Stack size in bytes. */
-    this,               /* Parameter passed as input of the task */
-    1,                  /* Priority of the task. */
-    NULL                /* Task handle. */
-  );
 }
 
 // Clear custom segments, time segments and segment masks.

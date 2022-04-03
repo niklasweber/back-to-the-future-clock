@@ -27,6 +27,8 @@ EncodedAudioStream decoder(&i2s, new MP3DecoderHelix()); // Decoding stream
 StreamCopy copier;                  // copies sound into i2s
 File audioFile;
 
+TaskHandle_t updateTimeTaskHandle;
+
 void onSetSegment(std::string& data)
 {
     if(data.length() != 2) return;
@@ -141,6 +143,22 @@ void soundTask( void * parameter )
     vTaskDelete( NULL );
 }
 
+void updateTimeTask( void * parameter )
+{
+  DisplayPanel *displayPanel = (DisplayPanel *) parameter;
+
+  while (true)
+  {
+    displayPanel->setRow(1);
+    displayPanel->setDay(day());
+    displayPanel->setMonth(month());
+    displayPanel->setYear(year());
+    displayPanel->setHourAndMinute(hour(), minute());
+    displayPanel->write();
+    delay(50);
+  }
+}
+
 void setup()
 {
     WiFi.mode(WIFI_OFF);
@@ -148,12 +166,12 @@ void setup()
 
     displayPanel.begin();
     displayPanel.write();
-    displayPanel.setAutoBrightness(true);
 
     if(rtc.begin()) 
     {
-        //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-        // rtc.adjust(DateTime(2022, 1, 6, 23, 59, 50));
+        // DateTime time = DateTime(F(__DATE__), F(__TIME__)) + 40;
+        // DateTime time = DateTime(2022, 1, 6, 23, 59, 50)
+        // rtc.adjust(time);
         setTime(rtc.now().unixtime());
     }
     else
@@ -195,6 +213,7 @@ void setup()
 
     displayPanel.clear();
     displayPanel.write();
+    displayPanel.setAutoBrightness(true);
 
     // Set top row to "26.10. 1985 AM 01:21"
     displayPanel.setRow(2);
@@ -218,6 +237,15 @@ void setup()
     displayPanel.setYear(1955);
     displayPanel.setHourAndMinute(6, 38);
     displayPanel.write();
+
+    xTaskCreate(
+        updateTimeTask,     /* Task function. */
+        "updateTimeTask",   /* String with name of task. */
+        10000,              /* Stack size in bytes. */
+        &displayPanel,      /* Parameter passed as input of the task */
+        1,                  /* Priority of the task. */
+        &updateTimeTaskHandle     /* Task handle. */
+    );
 }
 
 void loop() 
