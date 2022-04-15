@@ -14,6 +14,10 @@ using namespace audio_tools;
 
 #define BOOT_MIN_TIME 2000
 
+// TimeLib can only represent 1970-2225. We want to save 0-9999.
+// If time is set outside of 1970-2225, set the offset as well to increase time range.
+int16_t currentYearOffset = 0;
+
 RTC_DS3231 rtc;
 DisplayPanel displayPanel;
 CommandInterface commandInterface;
@@ -70,10 +74,58 @@ void onSetBrightness(std::string& data)
 
 void onSetTime(std::string& data)
 {
-    Serial.println("onSetTime");
-    Serial.print(data.length());
-    Serial.print(" ");
-    Serial.println(data.c_str());
+    if(data.length() != 8) return;
+
+    uint8_t slot = data[0];
+    if(slot > (displayPanel.getRows())) return;
+
+    uint8_t newDay = data[1];
+    uint8_t newMonth = data[2];
+    uint8_t yearBytes[2];
+            yearBytes[0] = data[3];
+            yearBytes[1] = data[4];
+    uint8_t newHour = data[5];
+    uint8_t newMinute = data[6];
+    uint8_t newSecond = data[7];
+
+    uint16_t newYear;
+    memcpy(&newYear, &yearBytes, sizeof newYear);
+    newYear = ntohs(newYear);
+    if(newYear > 9999)
+        newYear = 9999;
+
+    if(slot == 0)
+    {
+        // set RTC
+        // RTC can only save year 2000-2099
+    }
+    else if(slot == 2)
+    {
+        // TimeLib only uses a uint8_t for the year! (Can only represent 1970-2225)
+        // Thus use currentYearOffset to extend possible year to at least 0-9999.
+        if(newYear < 1970)
+        {
+            currentYearOffset = newYear - 1970;
+            newYear = 1970;
+        }
+        else if(newYear > 2225)
+        {
+            currentYearOffset = newYear - 2225;
+            newYear = 2225;
+        }
+        //System time
+        setTime(newHour, newMinute, newSecond, newDay, newMonth, newYear);
+    }
+    else if(slot == 1 || slot == 3)
+    {
+        //slot 0 is for rtc. Thus row 0 = 1, row 2 = 3
+        slot -= 1;
+        displayPanel.setRow(slot);
+        displayPanel.setDay(newDay);
+        displayPanel.setMonth(newMonth);
+        displayPanel.setYear(newYear);
+        displayPanel.setHourAndMinute(newHour, newMinute);
+    }
 }
 
 void onSetVolume(std::string& data)
@@ -136,7 +188,7 @@ void updateTimeTask( void * parameter )
     displayPanel->setRow(1);
     displayPanel->setDay(day());
     displayPanel->setMonth(month());
-    displayPanel->setYear(year());
+    displayPanel->setYear(year() + currentYearOffset);
     displayPanel->setHourAndMinute(hour(), minute());
     displayPanel->write();
     delay(50);
@@ -210,7 +262,7 @@ void setup()
     displayPanel.setRow(1);
     displayPanel.setDay(day());
     displayPanel.setMonth(month());
-    displayPanel.setYear(year());
+    displayPanel.setYear(year() + currentYearOffset);
     displayPanel.setHourAndMinute(hour(), minute());
 
     // Set bottom row to "12.11. 1955 AM 06:38"
