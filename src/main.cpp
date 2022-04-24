@@ -96,6 +96,13 @@ void onSetTime(std::string& data)
     {
         // set RTC
         // RTC can only save year 2000-2099
+        if(newYear < 2000)
+            newYear = 2000;
+        else if(newYear > 2099)
+            newYear = 2099;
+        DateTime time = DateTime(newYear, newMonth, newDay, newHour, newMinute, newSecond);
+        rtc.adjust(time);
+        presentTime.setTime(newYear, newMonth, newDay, newHour, newMinute, newSecond);
     }
     else if(slot == 2)
     {
@@ -200,9 +207,6 @@ void setup()
 
     if(rtc.begin()) 
     {
-        // DateTime time = DateTime(F(__DATE__), F(__TIME__)) + 40;
-        // DateTime time = DateTime(2022, 1, 6, 23, 59, 50)
-        // rtc.adjust(time);
         DateTime now = rtc.now();
         presentTime.setTime(now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second());
     }
