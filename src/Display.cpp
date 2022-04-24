@@ -84,6 +84,17 @@ void Display::setSegments(const uint8_t segments[], uint8_t length, uint8_t pos,
     memcpy(this->segments[layer]+pos, segments, length);
 }
 
+uint8_t Display::getSegment(uint8_t pos, uint8_t layer)
+{
+    // Boundary checks
+    if(pos > segmentsMax-1)
+        pos = segmentsMax-1;
+    if(layer > layersMax-1)
+        layer = layersMax-1;
+
+    return segments[layer][pos];
+}
+
 void Display::setDigits(uint8_t digits[], uint8_t length, uint8_t pos, uint8_t layer)
 {
     for(int i=0; i<length; i++)

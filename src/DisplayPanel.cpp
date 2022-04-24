@@ -357,14 +357,19 @@ void DisplayPanel::setHourAndMinute(unsigned char hour, unsigned char minute)
     digits[2] = 0x00 | SEG_G;
     digits[3] = 0x00 | SEG_G;
   }
-  
-  // Set colon
-  digits[0] &= ~SEG_DP;
-  digits[1] |= SEG_DP;
-  digits[2] &= ~SEG_DP;
-  digits[3] &= ~SEG_DP;
 
   displays[row][2]->setSegments(digits, 5, 0, LAYER_TIME);
+}
+
+void DisplayPanel::setColon(bool on)
+{
+  uint8_t prev_segment = displays[row][2]->getSegment(1, LAYER_TIME);
+  if(on)
+    prev_segment |= SEG_DP;
+  else
+    prev_segment &= ~SEG_DP;
+
+  displays[row][2]->setSegments(&prev_segment, 1, 1, LAYER_TIME);
 }
 
 uint8_t DisplayPanel::getSegmentsMax()

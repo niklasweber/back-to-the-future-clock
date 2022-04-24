@@ -17,7 +17,7 @@ public:
     void write();
     void setActiveLayer(uint8_t segment, uint8_t layer);
     void setSegments(const uint8_t segments[], uint8_t length = 4, uint8_t pos = 0, uint8_t layer = 0);
-    // uint8_t getSegments(uint8_t column);
+    uint8_t getSegment(uint8_t pos, uint8_t layer = 0);
     void setDigits(uint8_t digits[], uint8_t length = 4, uint8_t pos = 0, uint8_t layer = 0);
     uint8_t encodeDigit(uint8_t digit);
     void setBrightness(uint8_t brightness);

@@ -38,6 +38,7 @@ public:
     void setDay(unsigned char day);
     void setYear(unsigned int year);
     void setHourAndMinute(unsigned char hour, unsigned char minute);
+    void setColon(bool on);
     uint8_t getSegmentsMax();
     uint8_t getRows();
     uint8_t getColumns();
