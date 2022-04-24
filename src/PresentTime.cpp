@@ -2,12 +2,12 @@
 
 TimeElements_t PresentTime::now() {
     TimeElements_t now;
-    // calculate number of seconds passed since last call to now()
-    while (millis() - prevMillis >= 1000) {
+    // calculate number of halfseconds passed since last call to now()
+    while (millis() - prevMillis >= 500) {
         // millis overflow dealt with!
         // millis() and prevMillis are both unsigned ints thus the subtraction will always be the absolute value of the difference
         sysTime++;
-        prevMillis += 1000;
+        prevMillis += 500;
     }
     breakTime(sysTime, now);
     return now;
@@ -18,7 +18,7 @@ void PresentTime::setTime(int64_t t) {
   prevMillis = millis(); // restart counting from now
 }
 
-void PresentTime::setTime(uint16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second) {
+void PresentTime::setTime(uint16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second, uint8_t halfsecond) {
     TimeElements_t now;
     now.Year = year;
     now.Month = month;
@@ -26,6 +26,7 @@ void PresentTime::setTime(uint16_t year, uint8_t month, uint8_t day, uint8_t hou
     now.Hour = hour;
     now.Minute = minute;
     now.Second = second;
+    now.Halfsecond = halfsecond;
     setTime(makeTime(now));
 }
 
@@ -45,6 +46,8 @@ void PresentTime::breakTime(int64_t timeInput, TimeElements_t &tm){
     int64_t month, monthLength;
     int64_t days;
 
+    tm.Halfsecond = timeInput % 2;
+    timeInput /= 2; // now it is seconds
     tm.Second = timeInput % 60;
     timeInput /= 60; // now it is minutes
     tm.Minute = timeInput % 60;
@@ -89,26 +92,28 @@ void PresentTime::breakTime(int64_t timeInput, TimeElements_t &tm){
 
 int64_t PresentTime::makeTime(const TimeElements_t &tm){
     // assemble time elements into int64_t
-    int64_t seconds;
+    int64_t halfseconds;
 
-    seconds = tm.Year * 31536000LL;
+    halfseconds = tm.Year * 31536000LL;
     for (int i = 0; i < tm.Year; i++) {
         if (LEAP_YEAR(i)) {
-            seconds +=  86400; // add extra days for leap years
+            halfseconds +=  86400; // add extra days for leap years
         }
     }
   
     // add days for this year, months start from 1
     for (int i = 1; i < tm.Month; i++) {
         if ( (i == 2) && LEAP_YEAR(tm.Year)) {
-            seconds += 86400 * 29;
+            halfseconds += 86400 * 29;
         } else {
-            seconds += 86400 * monthDays[i-1];  //monthDay array starts from 0
+            halfseconds += 86400 * monthDays[i-1];  //monthDay array starts from 0
         }
     }
-    seconds += (tm.Day-1) * 86400;
-    seconds += tm.Hour * 3600;
-    seconds += tm.Minute * 60;
-    seconds += tm.Second;
-    return seconds;
+    halfseconds += (tm.Day-1) * 86400;
+    halfseconds += tm.Hour * 3600;
+    halfseconds += tm.Minute * 60;
+    halfseconds += tm.Second;
+    halfseconds *= 2;
+    halfseconds += tm.Halfsecond;
+    return halfseconds;
 }

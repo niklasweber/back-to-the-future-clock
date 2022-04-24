@@ -173,17 +173,17 @@ void updateTimeTask( void * parameter )
   {
     TimeElements_t now = presentTime.now();
     displayPanel->setRow(0);
-    displayPanel->setColon(now.Second % 2);
+    displayPanel->setColon(now.Halfsecond % 2);
 
     displayPanel->setRow(1);
     displayPanel->setDay(now.Day);
     displayPanel->setMonth(now.Month);
     displayPanel->setYear(now.Year);
     displayPanel->setHourAndMinute(now.Hour, now.Minute);
-    displayPanel->setColon(now.Second % 2);
+    displayPanel->setColon(now.Halfsecond % 2);
 
     displayPanel->setRow(2);
-    displayPanel->setColon(now.Second % 2);
+    displayPanel->setColon(now.Halfsecond % 2);
 
     displayPanel->write();
     delay(50);
