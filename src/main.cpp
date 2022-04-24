@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <RTClib.h>
 #include <TimeLib.h>
+#include "PresentTime.h"
 #include "DisplayPanel.h"
 #include "CommandInterface.h"
 
@@ -14,11 +15,8 @@ using namespace audio_tools;
 
 #define BOOT_MIN_TIME 2000
 
-// TimeLib can only represent 1970-2225. We want to save 0-9999.
-// If time is set outside of 1970-2225, set the offset as well to increase time range.
-int16_t currentYearOffset = 0;
-
 RTC_DS3231 rtc;
+PresentTime presentTime;
 DisplayPanel displayPanel;
 CommandInterface commandInterface;
 
@@ -101,20 +99,8 @@ void onSetTime(std::string& data)
     }
     else if(slot == 2)
     {
-        // TimeLib only uses a uint8_t for the year! (Can only represent 1970-2225)
-        // Thus use currentYearOffset to extend possible year to at least 0-9999.
-        if(newYear < 1970)
-        {
-            currentYearOffset = newYear - 1970;
-            newYear = 1970;
-        }
-        else if(newYear > 2225)
-        {
-            currentYearOffset = newYear - 2225;
-            newYear = 2225;
-        }
         //System time
-        setTime(newHour, newMinute, newSecond, newDay, newMonth, newYear);
+        presentTime.setTime(newYear, newMonth, newDay, newHour, newMinute, newSecond);
     }
     else if(slot == 1 || slot == 3)
     {
@@ -185,11 +171,13 @@ void updateTimeTask( void * parameter )
 
   while (true)
   {
+    TimeElements_t now = presentTime.now();
+
     displayPanel->setRow(1);
-    displayPanel->setDay(day());
-    displayPanel->setMonth(month());
-    displayPanel->setYear(year() + currentYearOffset);
-    displayPanel->setHourAndMinute(hour(), minute());
+    displayPanel->setDay(now.Day);
+    displayPanel->setMonth(now.Month);
+    displayPanel->setYear(now.Year);
+    displayPanel->setHourAndMinute(now.Hour, now.Minute);
     displayPanel->write();
     delay(50);
   }
@@ -208,7 +196,8 @@ void setup()
         // DateTime time = DateTime(F(__DATE__), F(__TIME__)) + 40;
         // DateTime time = DateTime(2022, 1, 6, 23, 59, 50)
         // rtc.adjust(time);
-        setTime(rtc.now().unixtime());
+        DateTime now = rtc.now();
+        presentTime.setTime(now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second());
     }
     else
     {
@@ -258,12 +247,13 @@ void setup()
     displayPanel.setHourAndMinute(1, 21);
     // TODO: Load times from SPIFFS
 
+    TimeElements_t now = presentTime.now();
     // Set middle row to current system time
     displayPanel.setRow(1);
-    displayPanel.setDay(day());
-    displayPanel.setMonth(month());
-    displayPanel.setYear(year() + currentYearOffset);
-    displayPanel.setHourAndMinute(hour(), minute());
+    displayPanel.setDay(now.Day);
+    displayPanel.setMonth(now.Month);
+    displayPanel.setYear(now.Year);
+    displayPanel.setHourAndMinute(now.Hour, now.Minute);
 
     // Set bottom row to "12.11. 1955 AM 06:38"
     displayPanel.setRow(0);
