@@ -117,3 +117,17 @@ int64_t PresentTime::makeTime(const TimeElements_t &tm){
     halfseconds += tm.Halfsecond;
     return halfseconds;
 }
+
+bool PresentTime::isSyncTimeDue()
+{
+    if (nextSyncTime <= sysTime)
+        return true;
+    else
+        return false;
+}
+
+void PresentTime::markSynced()
+{
+    nextSyncTime = sysTime + (60 * 2); //  1 minute in halfseconds
+    Serial.println("Synced time with rtc");
+}

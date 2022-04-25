@@ -21,9 +21,12 @@ public:
     TimeElements_t now();
     void breakTime(int64_t timeInput, TimeElements_t &tm); // Get day, month, ... from unix ts
     int64_t makeTime(const TimeElements_t &tm);
+    bool isSyncTimeDue();
+    void markSynced();
 private:
     void setTime(int64_t t);
     int64_t sysTime = 0; // call now() to update sysTime
+    int64_t nextSyncTime = 0;
     uint32_t prevMillis = 0;
 };
 

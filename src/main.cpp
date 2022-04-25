@@ -179,6 +179,26 @@ void updateTimeTask( void * parameter )
   while (true)
   {
     TimeElements_t now = presentTime.now();
+
+    if(presentTime.isSyncTimeDue())
+    {
+        if(now.Year >= 2000 && now.Year <= 2099 && rtc.begin())
+        {
+            DateTime rtcNow = rtc.now();
+            //If system time is not +/- 1 minute of RTC, do not sync (time could be intentionally set differently).
+            if( rtcNow.year() == now.Year &&
+                rtcNow.month() == now.Month &&
+                rtcNow.day() == now.Day &&
+                rtcNow.hour() == now.Hour &&
+                (rtcNow.minute() - now.Minute <= 1 && rtcNow.minute() - now.Minute >= -1)
+            )
+            {
+                presentTime.setTime(rtcNow.year(), rtcNow.month(), rtcNow.day(), rtcNow.hour(), rtcNow.minute(), rtcNow.second());
+                presentTime.markSynced();
+            }
+        }
+    }
+
     displayPanel->setRow(0);
     displayPanel->setColon(now.Halfsecond % 2);
 
@@ -209,6 +229,7 @@ void setup()
     {
         DateTime now = rtc.now();
         presentTime.setTime(now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second());
+        presentTime.markSynced();
     }
     else
     {
@@ -256,15 +277,6 @@ void setup()
     displayPanel.setMonth(10);
     displayPanel.setYear(1985);
     displayPanel.setHourAndMinute(1, 21);
-    // TODO: Load times from SPIFFS
-
-    TimeElements_t now = presentTime.now();
-    // Set middle row to current system time
-    displayPanel.setRow(1);
-    displayPanel.setDay(now.Day);
-    displayPanel.setMonth(now.Month);
-    displayPanel.setYear(now.Year);
-    displayPanel.setHourAndMinute(now.Hour, now.Minute);
 
     // Set bottom row to "12.11. 1955 AM 06:38"
     displayPanel.setRow(0);
