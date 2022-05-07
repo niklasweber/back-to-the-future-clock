@@ -11,23 +11,12 @@
 #include "AudioTools.h"
 #include "AudioCodecs/CodecMP3Helix.h"
 
-using namespace audio_tools;
-
 #define BOOT_MIN_TIME 2000
 
 RTC_DS3231 rtc;
 PresentTime presentTime;
 DisplayPanel displayPanel;
 CommandInterface commandInterface;
-
-typedef int16_t sound_t;                        // sound will be represented as int16_t (with 2 bytes)
-uint16_t sample_rate=44100;
-uint8_t channels = 2;                           // The stream will have 2 channels
-
-I2SStream i2s;                                  // final output of decoded stream
-EncodedAudioStream decoder(&i2s, new MP3DecoderHelix()); // Decoding stream
-StreamCopy copier;                  // copies sound into i2s
-File audioFile;
 
 TaskHandle_t updateTimeTaskHandle;
 
@@ -139,20 +128,29 @@ void onSetPlayback(std::string& data)
 
 void soundTask( void * parameter )
 {
-    audioFile = SPIFFS.open("/time_circuits_on.mp3");
+    I2SStream i2s; // final output of decoded stream
+    VolumeStream out(i2s); // stream to control volume
+    EncodedAudioStream decoder(&out, new MP3DecoderHelix()); // Decoding stream
+    StreamCopy copier; // copies sound into i2s
+
+    File audioFile = SPIFFS.open("/time_circuits_on.mp3");
     if(!audioFile || audioFile.isDirectory()){
         Serial.println("Failed to open file for reading");
         vTaskDelete( NULL );
     }
     // setup i2s
     auto config = i2s.defaultConfig(TX_MODE);
-    config.sample_rate = sample_rate; 
-    config.channels = channels;
+    config.sample_rate = 44100;
+    config.channels = 2;
     config.bits_per_sample = 16;
     config.pin_bck = 17;
     config.pin_data = 16;
     config.pin_ws = 4;
     i2s.begin(config);
+
+    // set initial volume
+    out.begin(config); // we need to provide the bits_per_sample and channels
+    out.setVolume(0.4);
 
     // setup I2S based on sampling rate provided by decoder
     decoder.setNotifyAudioChange(i2s);
