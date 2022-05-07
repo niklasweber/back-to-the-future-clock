@@ -6,16 +6,24 @@
 #include <BH1750.h>
 #include <TimeLib.h>
 
+//#define JTAG
+
 #define DIO 26
 #define CLK_DISPLAY1_ROW_BOTTOM 33
 #define CLK_DISPLAY2_ROW_BOTTOM 23
-// #define CLK_DISPLAY3_ROW_BOTTOM 13 // TCK
-#define CLK_DISPLAY3_ROW_BOTTOM 23
+#ifdef JTAG
+    #define CLK_DISPLAY3_ROW_BOTTOM 23
+#else
+    #define CLK_DISPLAY3_ROW_BOTTOM 13 // TCK
+#endif
 #define CLK_DISPLAY1_ROW_MIDDLE 27
 #define CLK_DISPLAY2_ROW_MIDDLE 25
 #define CLK_DISPLAY3_ROW_MIDDLE 32
-// #define CLK_DISPLAY1_ROW_TOP 15 // TD0
-#define CLK_DISPLAY1_ROW_TOP 18
+#ifdef JTAG
+    #define CLK_DISPLAY1_ROW_TOP 18
+#else
+    #define CLK_DISPLAY1_ROW_TOP 15 // TD0
+#endif
 #define CLK_DISPLAY2_ROW_TOP 18
 #define CLK_DISPLAY3_ROW_TOP 19
 
