@@ -27,6 +27,13 @@
 #define CLK_DISPLAY2_ROW_TOP 18
 #define CLK_DISPLAY3_ROW_TOP 19
 
+enum EB2TF_ERR_CODE
+{
+    B2TF_ERR_UNKNOWN=0,
+    B2TF_ERR_RTC_CONNECTION=1,
+    B2TF_ERR_SPIFFS_INIT=2
+};
+
 class DisplayPanel
 {
 public:
@@ -39,8 +46,7 @@ public:
     void setBrightnessAll(unsigned char brightness);
     void setAutoBrightness(bool autoBrightness);
     float getLightMeterValue();
-    void showRTCError();
-    void showSoundError(int error_code);
+    void showError(uint16_t error_code);
     void setRow(unsigned int row);
     void setMonth(unsigned char month);
     void setDay(unsigned char day);

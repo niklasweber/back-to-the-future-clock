@@ -232,7 +232,7 @@ void setup()
     else
     {
         displayPanel.setRow(1);
-        displayPanel.showRTCError();
+        displayPanel.showError(B2TF_ERR_RTC_CONNECTION);
         displayPanel.write();
         delay(3000);
     }
@@ -246,24 +246,22 @@ void setup()
 
     if(unsigned long m = millis() < BOOT_MIN_TIME) delay(BOOT_MIN_TIME - m);
 
-    if(SPIFFS.begin(false)) // false = don't format SPIFFS on fail
-    {
-        xTaskCreate(
-            soundTask,      /* Task function. */
-            "SoundTask",    /* String with name of task. */
-            10000,          /* Stack size in bytes. */
-            NULL,           /* Parameter passed as input of the task */
-            1,              /* Priority of the task. */
-            NULL            /* Task handle. */
-        );
-    }
-    else
+    if(!SPIFFS.begin(true)) // true = format SPIFFS on failure
     {
         displayPanel.setRow(1);
-        displayPanel.showSoundError(10);
+        displayPanel.showError(B2TF_ERR_SPIFFS_INIT);
         displayPanel.write();
         delay(3000);
     }
+
+    xTaskCreate(
+        soundTask,      /* Task function. */
+        "SoundTask",    /* String with name of task. */
+        10000,          /* Stack size in bytes. */
+        NULL,           /* Parameter passed as input of the task */
+        1,              /* Priority of the task. */
+        NULL            /* Task handle. */
+    );
 
     displayPanel.clear();
     displayPanel.write();
