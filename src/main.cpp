@@ -11,8 +11,6 @@
 #include "AudioTools.h"
 #include "AudioCodecs/CodecMP3Helix.h"
 
-#define BOOT_MIN_TIME 2000
-
 RTC_DS3231 rtc;
 PresentTime presentTime;
 DisplayPanel displayPanel;
@@ -223,6 +221,23 @@ void setup()
     displayPanel.begin();
     displayPanel.write();
 
+    if(!SPIFFS.begin(true)) // true = format SPIFFS on failure
+    {
+        displayPanel.setRow(1);
+        displayPanel.showError(B2TF_ERR_SPIFFS_INIT);
+        displayPanel.write();
+        delay(3000);
+    }
+
+    xTaskCreate(
+        soundTask,      /* Task function. */
+        "SoundTask",    /* String with name of task. */
+        10000,          /* Stack size in bytes. */
+        NULL,           /* Parameter passed as input of the task */
+        1,              /* Priority of the task. */
+        NULL            /* Task handle. */
+    );
+
     if(rtc.begin()) 
     {
         DateTime now = rtc.now();
@@ -243,25 +258,6 @@ void setup()
     commandInterface.setCallbackOnSetVolume(&onSetVolume);
     commandInterface.setCallbackOnSetPlayback(&onSetPlayback);
     commandInterface.begin();
-
-    if(unsigned long m = millis() < BOOT_MIN_TIME) delay(BOOT_MIN_TIME - m);
-
-    if(!SPIFFS.begin(true)) // true = format SPIFFS on failure
-    {
-        displayPanel.setRow(1);
-        displayPanel.showError(B2TF_ERR_SPIFFS_INIT);
-        displayPanel.write();
-        delay(3000);
-    }
-
-    xTaskCreate(
-        soundTask,      /* Task function. */
-        "SoundTask",    /* String with name of task. */
-        10000,          /* Stack size in bytes. */
-        NULL,           /* Parameter passed as input of the task */
-        1,              /* Priority of the task. */
-        NULL            /* Task handle. */
-    );
 
     displayPanel.clear();
     displayPanel.write();
