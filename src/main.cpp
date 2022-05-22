@@ -126,16 +126,29 @@ void onSetPlayback(std::string& data)
 
 void soundTask( void * parameter )
 {
-    I2SStream i2s; // final output of decoded stream
-    VolumeStream out(i2s); // stream to control volume
-    EncodedAudioStream decoder(&out, new MP3DecoderHelix()); // Decoding stream
-    StreamCopy copier; // copies sound into i2s
+    File timeCircuitsOn = SPIFFS.open("/time_circuits_on.wav");
+    File beep = SPIFFS.open("/beep.wav");
 
-    File audioFile = SPIFFS.open("/time_circuits_on.mp3");
-    if(!audioFile || audioFile.isDirectory()){
-        Serial.println("Failed to open file for reading");
+    if(!timeCircuitsOn || timeCircuitsOn.isDirectory()){
+        Serial.println("Failed to open time_circuits_on.wav for reading");
         vTaskDelete( NULL );
     }
+    if(!beep || beep.isDirectory()){
+        Serial.println("Failed to open beep.wav for reading");
+        vTaskDelete( NULL );
+    }
+    beep.close();
+
+    I2SStream i2s; // final output of decoded stream
+    VolumeStream out(i2s); // stream to control volume
+
+    WAVDecoder wavDecoder; // decode wav to pcm and send it to I2S
+    EncodedAudioStream decoder(out, wavDecoder); // Decoder stream
+    WAVDecoder wavDecoder2;
+    EncodedAudioStream decoder2(out, wavDecoder2);
+
+    StreamCopy copier; // copies sound into i2s
+
     // setup i2s
     auto config = i2s.defaultConfig(TX_MODE);
     config.sample_rate = 44100;
@@ -150,21 +163,38 @@ void soundTask( void * parameter )
     out.begin(config); // we need to provide the bits_per_sample and channels
     out.setVolume(0.4);
 
+    //----------------------------------
+
     // setup I2S based on sampling rate provided by decoder
     decoder.setNotifyAudioChange(i2s);
     decoder.begin();
 
     // begin copy
-    copier.begin(decoder, audioFile);
+    copier.begin(decoder, timeCircuitsOn);
 
-    while (true)
+    while(copier.copy()){}
+
+    decoder.end();
+    // copier.end();
+    timeCircuitsOn.close();
+
+    //----------------------------------
+
+    decoder2.setNotifyAudioChange(i2s);
+    decoder2.begin();
+
+    copier.begin(decoder2, beep);
+
+    while(true)
     {
-        if (!copier.copy()) {
-            audioFile.close();
-            break;
-        }
+        beep = SPIFFS.open("/beep.wav");
+        while(!presentTime.now().Halfsecond % 2){ delay(1); }
+        while(copier.copy()){}
+        beep.close();
     }
-    delay(3000);
+
+    copier.end();
+    decoder2.end();
     vTaskDelete( NULL );
 }
 
@@ -234,7 +264,7 @@ void setup()
         "SoundTask",    /* String with name of task. */
         10000,          /* Stack size in bytes. */
         NULL,           /* Parameter passed as input of the task */
-        1,              /* Priority of the task. */
+        1000,              /* Priority of the task. */
         NULL            /* Task handle. */
     );
 
