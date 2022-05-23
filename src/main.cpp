@@ -16,7 +16,11 @@ PresentTime presentTime;
 DisplayPanel displayPanel;
 CommandInterface commandInterface;
 
-TaskHandle_t updateTimeTaskHandle;
+TaskHandle_t updateTimeTaskHandle = NULL;
+TaskHandle_t playSoundTaskHandle = NULL;
+
+I2SStream i2s; // final output of decoded stream
+VolumeStream out(i2s); // stream to control volume
 
 void onSetSegment(std::string& data)
 {
@@ -124,66 +128,73 @@ void onSetPlayback(std::string& data)
     Serial.println(data.c_str());
 }
 
-void soundTask( void * parameter )
+uint8_t playSound(const char * file)
 {
-    File timeCircuitsOn = SPIFFS.open("/time_circuits_on.wav");
-    File beep = SPIFFS.open("/beep.wav");
-
-    if(!timeCircuitsOn || timeCircuitsOn.isDirectory()){
-        Serial.println("Failed to open time_circuits_on.wav for reading");
-        vTaskDelete( NULL );
+    File soundFile = SPIFFS.open(file);
+    if(!soundFile || soundFile.isDirectory()){
+        Serial.println("Failed to open sound file for reading");
+        return 1;
     }
-    if(!beep || beep.isDirectory()){
-        Serial.println("Failed to open beep.wav for reading");
-        vTaskDelete( NULL );
-    }
-    beep.close();
-
-    I2SStream i2s; // final output of decoded stream
-    VolumeStream out(i2s); // stream to control volume
 
     WAVDecoder wavDecoder; // decode wav to pcm and send it to I2S
     EncodedAudioStream decoder(out, wavDecoder); // Decoder stream
-    WAVDecoder wavDecoder2;
-    EncodedAudioStream decoder2(out, wavDecoder2);
 
     StreamCopy copier; // copies sound into i2s
-
-    // setup i2s
-    auto config = i2s.defaultConfig(TX_MODE);
-    config.sample_rate = 44100;
-    config.channels = 2;
-    config.bits_per_sample = 16;
-    config.pin_bck = 17;
-    config.pin_data = 16;
-    config.pin_ws = 4;
-    i2s.begin(config);
-
-    // set initial volume
-    out.begin(config); // we need to provide the bits_per_sample and channels
-    out.setVolume(0.4);
-
-    //----------------------------------
 
     // setup I2S based on sampling rate provided by decoder
     decoder.setNotifyAudioChange(i2s);
     decoder.begin();
 
     // begin copy
-    copier.begin(decoder, timeCircuitsOn);
+    copier.begin(decoder, soundFile);
 
     while(copier.copy()){}
 
+    copier.end();
     decoder.end();
-    // copier.end();
-    timeCircuitsOn.close();
+    soundFile.close();
+
+    return 0;
+}
+
+void playSoundTask( void * parameter )
+{
+    playSound((const char *)parameter);
+    vTaskDelete( NULL );
+}
+
+void playSoundAsync(const char * file)
+{
+    xTaskCreate(
+        playSoundTask,          /* Task function. */
+        "playSoundTask",        /* String with name of task. */
+        10000,                  /* Stack size in bytes. */
+        ( void * ) file,        /* Parameter passed as input of the task */
+        3,                      /* Priority of the task. */
+        &playSoundTaskHandle    /* Task handle. */
+    );
+}
+
+void beepTask( void * parameter )
+{
+    File beep = SPIFFS.open("/beep.wav");
+    if(!beep || beep.isDirectory()){
+        Serial.println("Failed to open beep.wav for reading");
+        vTaskDelete( NULL );
+    }
+    beep.close();
+
+    WAVDecoder wavDecoder; // decode wav to pcm and send it to I2S
+    EncodedAudioStream decoder(out, wavDecoder); // Decoder stream
+
+    StreamCopy copier; // copies sound into i2s
 
     //----------------------------------
 
-    decoder2.setNotifyAudioChange(i2s);
-    decoder2.begin();
+    decoder.setNotifyAudioChange(i2s);
+    decoder.begin();
 
-    copier.begin(decoder2, beep);
+    copier.begin(decoder, beep);
 
     while(true)
     {
@@ -194,7 +205,7 @@ void soundTask( void * parameter )
     }
 
     copier.end();
-    decoder2.end();
+    decoder.end();
     vTaskDelete( NULL );
 }
 
@@ -251,6 +262,21 @@ void setup()
     displayPanel.begin();
     displayPanel.write();
 
+    // setup i2s
+    auto config = i2s.defaultConfig(TX_MODE);
+    config.sample_rate = 44100;
+    config.channels = 2;
+    config.bits_per_sample = 16;
+    config.pin_bck = 17;
+    config.pin_data = 16;
+    config.pin_ws = 4;
+
+    i2s.begin(config);
+
+    // set initial volume
+    out.begin(config); // we need to provide the bits_per_sample and channels
+    out.setVolume(0.4);
+
     if(!SPIFFS.begin(true)) // true = format SPIFFS on failure
     {
         displayPanel.setRow(1);
@@ -259,14 +285,7 @@ void setup()
         delay(3000);
     }
 
-    xTaskCreate(
-        soundTask,      /* Task function. */
-        "SoundTask",    /* String with name of task. */
-        10000,          /* Stack size in bytes. */
-        NULL,           /* Parameter passed as input of the task */
-        1000,              /* Priority of the task. */
-        NULL            /* Task handle. */
-    );
+    playSoundAsync("/time_circuits_on.wav");
 
     if(rtc.begin()) 
     {
@@ -315,6 +334,15 @@ void setup()
         &displayPanel,      /* Parameter passed as input of the task */
         1,                  /* Priority of the task. */
         &updateTimeTaskHandle     /* Task handle. */
+    );
+
+    xTaskCreate(
+        beepTask,       /* Task function. */
+        "beepTask",     /* String with name of task. */
+        4000,           /* Stack size in bytes. */
+        NULL,           /* Parameter passed as input of the task */
+        1000,           /* Priority of the task. */
+        NULL            /* Task handle. */
     );
 }
 
