@@ -136,8 +136,8 @@ uint8_t playSound(const char * file)
         return 1;
     }
 
-    WAVDecoder wavDecoder; // decode wav to pcm and send it to I2S
-    EncodedAudioStream decoder(out, wavDecoder); // Decoder stream
+    MP3DecoderHelix mp3Decoder;
+    EncodedAudioStream decoder(out, mp3Decoder);
 
     StreamCopy copier; // copies sound into i2s
 
@@ -177,15 +177,15 @@ void playSoundAsync(const char * file)
 
 void beepTask( void * parameter )
 {
-    File beep = SPIFFS.open("/beep.wav");
+    File beep = SPIFFS.open("/beep.mp3");
     if(!beep || beep.isDirectory()){
-        Serial.println("Failed to open beep.wav for reading");
+        Serial.println("Failed to open beep.mp3 for reading");
         vTaskDelete( NULL );
     }
     beep.close();
 
-    WAVDecoder wavDecoder; // decode wav to pcm and send it to I2S
-    EncodedAudioStream decoder(out, wavDecoder); // Decoder stream
+    MP3DecoderHelix mp3Decoder;
+    EncodedAudioStream decoder(out, mp3Decoder); // Decoding stream
 
     StreamCopy copier; // copies sound into i2s
 
@@ -198,8 +198,8 @@ void beepTask( void * parameter )
 
     while(true)
     {
-        beep = SPIFFS.open("/beep.wav");
-        while(!presentTime.now().Halfsecond % 2){ delay(1); }
+        beep = SPIFFS.open("/beep.mp3");
+        while(!presentTime.now().Halfsecond % 2){}
         while(copier.copy()){}
         beep.close();
     }
@@ -275,7 +275,7 @@ void setup()
 
     // set initial volume
     out.begin(config); // we need to provide the bits_per_sample and channels
-    out.setVolume(0.4);
+    out.setVolume(0.2);
 
     if(!SPIFFS.begin(true)) // true = format SPIFFS on failure
     {
@@ -285,7 +285,7 @@ void setup()
         delay(3000);
     }
 
-    playSoundAsync("/time_circuits_on.wav");
+    playSound("/time_circuits_on.mp3");
 
     if(rtc.begin()) 
     {
@@ -330,11 +330,14 @@ void setup()
     xTaskCreate(
         updateTimeTask,     /* Task function. */
         "updateTimeTask",   /* String with name of task. */
-        10000,              /* Stack size in bytes. */
+        1000,              /* Stack size in bytes. */
         &displayPanel,      /* Parameter passed as input of the task */
         1,                  /* Priority of the task. */
         &updateTimeTaskHandle     /* Task handle. */
     );
+
+    playSound("/time_circuits_off.mp3");
+    delay(1000);
 
     xTaskCreate(
         beepTask,       /* Task function. */
