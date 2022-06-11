@@ -111,6 +111,10 @@ void CommandInterface::onWrite(BLECharacteristic* pCharacteristic)
     {
         onSetTimePtr(data);
     }
+    else if(uuid.compare(TRAVEL_CHARACTERISTIC_UUID) == 0)
+    {
+        onTravelPtr(data);
+    }
     else if(uuid.compare(VOLUME_CHARACTERISTIC_UUID) == 0)
     {
         onSetVolumePtr(data);
@@ -141,6 +145,10 @@ uint8_t CommandInterface::begin()
                                             TIME_CHARACTERISTIC_UUID,
                                             BLECharacteristic::PROPERTY_WRITE
                                         );
+    BLECharacteristic *pTravelChar = pTimeService->createCharacteristic(
+                                            TRAVEL_CHARACTERISTIC_UUID,
+                                            BLECharacteristic::PROPERTY_WRITE
+                                        );
 
     BLEService *pSoundService = pServer->createService(SOUND_SERVICE_UUID);
     BLECharacteristic *pVolumeChar = pSoundService->createCharacteristic(
@@ -157,6 +165,7 @@ uint8_t CommandInterface::begin()
     pSegmentChar->setCallbacks(this);
     pBrightnessChar->setCallbacks(this);
     pTimeChar->setCallbacks(this);
+    pTravelChar->setCallbacks(this);
     pVolumeChar->setCallbacks(this);
     pPlaybackChar->setCallbacks(this);
 

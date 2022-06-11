@@ -12,6 +12,7 @@
 
 #define TIME_SERVICE_UUID               "12a1c6e7-23f0-4117-911f-6b42872a1497"
 #define TIME_CHARACTERISTIC_UUID        "d2920f73-f49f-42f8-85b2-8111a0daff28"
+#define TRAVEL_CHARACTERISTIC_UUID      "131666ca-4cc7-42c9-ac4f-833a3466e24e"
 
 #define SOUND_SERVICE_UUID              "ee7119dc-e8e1-40c6-a8bc-197a4db3b211"
 #define VOLUME_CHARACTERISTIC_UUID      "b51427c7-e803-43e2-b393-e1e808c519bb"
@@ -92,6 +93,10 @@ public:
     {
         this->onSetTimePtr = onSetTimePtr;
     }
+    void setCallbackOnTravel(void (*onTravelPtr)(std::string&))
+    {
+        this->onTravelPtr = onTravelPtr;
+    }
     void setCallbackOnSetVolume(void (*onSetVolumePtr)(std::string&))
     {
         this->onSetVolumePtr = onSetVolumePtr;
@@ -111,6 +116,7 @@ private:
     void (*onSetSegmentPtr)(std::string&);
     void (*onSetBrightnessPtr)(std::string&);
     void (*onSetTimePtr)(std::string&);
+    void (*onTravelPtr)(std::string&);
     void (*onSetVolumePtr)(std::string&);
     void (*onSetPlaybackPtr)(std::string&);
 };

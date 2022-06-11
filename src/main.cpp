@@ -112,6 +112,11 @@ void onSetTime(std::string& data)
     }
 }
 
+void onTravel(std::string& data)
+{
+    Serial.println("TRAVEL!!!!!!!!");
+}
+
 void onSetVolume(std::string& data)
 {
     Serial.println("onSetVolume");
@@ -304,6 +309,7 @@ void setup()
     commandInterface.setCallbackOnSetSegment(&onSetSegment);
     commandInterface.setCallbackOnSetBrightness(&onSetBrightness);
     commandInterface.setCallbackOnSetTime(&onSetTime);
+    commandInterface.setCallbackOnTravel(&onTravel);
     commandInterface.setCallbackOnSetVolume(&onSetVolume);
     commandInterface.setCallbackOnSetPlayback(&onSetPlayback);
     commandInterface.begin();
