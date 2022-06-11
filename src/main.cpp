@@ -19,7 +19,7 @@ CommandInterface commandInterface;
 TaskHandle_t updateTimeTaskHandle = NULL;
 TaskHandle_t playSoundTaskHandle = NULL;
 
-I2SStream i2s; // final output of decoded stream
+I2SStream i2s(0); // final output of decoded stream
 VolumeStream out(i2s); // stream to control volume
 
 void onSetSegment(std::string& data)
