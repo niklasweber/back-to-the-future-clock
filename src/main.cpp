@@ -336,7 +336,7 @@ void setup()
     xTaskCreate(
         updateTimeTask,     /* Task function. */
         "updateTimeTask",   /* String with name of task. */
-        1000,              /* Stack size in bytes. */
+        2000,              /* Stack size in bytes. */
         &displayPanel,      /* Parameter passed as input of the task */
         1,                  /* Priority of the task. */
         &updateTimeTaskHandle     /* Task handle. */
