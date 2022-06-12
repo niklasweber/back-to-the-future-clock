@@ -14,14 +14,16 @@ class Display
 public:
     Display(uint8_t pinClk, uint8_t pinDIO, unsigned int bitDelay = 100U):
         hw(pinClk, pinDIO, bitDelay), segments{}, brightness(0) {};
-    void write();
+    void flush();
     void setActiveLayer(uint8_t segment, uint8_t layer);
-    void setSegments(const uint8_t segments[], uint8_t length = 4, uint8_t pos = 0, uint8_t layer = 0);
+    void read(uint8_t * segments, uint8_t length = 4, uint8_t pos = 0, uint8_t layer = 0);
+    void setSegments(const uint8_t segments[], uint8_t length = 4, uint8_t pos = 0, uint8_t layer = 0, bool updateActiveLayer = false);
     uint8_t getSegment(uint8_t pos, uint8_t layer = 0);
     void setDigits(uint8_t digits[], uint8_t length = 4, uint8_t pos = 0, uint8_t layer = 0);
     uint8_t encodeDigit(uint8_t digit);
     void setBrightness(uint8_t brightness);
     uint8_t getSegmentsMax();
+    uint8_t getLayersMax();
 private:
     TM1637Display hw;
 

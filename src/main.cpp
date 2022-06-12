@@ -33,13 +33,14 @@ void onSetSegment(std::string& data)
         if(data.length() != 3) return;
         uint8_t segmentPos = data[1];
         uint8_t segmentData = data[2];
-        displayPanel.overwriteSegments(&segmentData, 1, segmentPos);
+        displayPanel.writeSegments(&segmentData, 1, segmentPos, LAYER_OVERWRITE, true);
     }
     else // clear segment
     {
         if(data.length() != 2) return;
         uint8_t segmentPos = data[1];
-        displayPanel.resetSegments(1, segmentPos);
+        uint8_t layer = LAYER_TIME;
+        displayPanel.setActiveLayers(&layer, 1, segmentPos);
     }
 }
 
@@ -254,7 +255,7 @@ void updateTimeTask( void * parameter )
     displayPanel->setRow(2);
     displayPanel->setColon(now.Halfsecond % 2);
 
-    displayPanel->write();
+    displayPanel->flush();
     delay(50);
   }
 }
@@ -265,7 +266,7 @@ void setup()
     Serial.begin(115200);
 
     displayPanel.begin();
-    displayPanel.write();
+    displayPanel.flush();
 
     // setup i2s
     auto config = i2s.defaultConfig(TX_MODE);
@@ -286,7 +287,7 @@ void setup()
     {
         displayPanel.setRow(1);
         displayPanel.showError(B2TF_ERR_SPIFFS_INIT);
-        displayPanel.write();
+        displayPanel.flush();
         delay(3000);
     }
 
@@ -302,7 +303,7 @@ void setup()
     {
         displayPanel.setRow(1);
         displayPanel.showError(B2TF_ERR_RTC_CONNECTION);
-        displayPanel.write();
+        displayPanel.flush();
         delay(3000);
     }
 
@@ -315,7 +316,7 @@ void setup()
     commandInterface.begin();
 
     displayPanel.clear();
-    displayPanel.write();
+    displayPanel.flush();
     displayPanel.setAutoBrightness(true);
 
     // Set top row to "26.10. 1985 AM 01:21"
@@ -331,7 +332,7 @@ void setup()
     displayPanel.setMonth(11);
     displayPanel.setYear(1955);
     displayPanel.setHourAndMinute(6, 38);
-    displayPanel.write();
+    displayPanel.flush();
 
     xTaskCreate(
         updateTimeTask,     /* Task function. */
@@ -361,9 +362,9 @@ void loop()
     // for(int i=18; i<=35; i++)
     // {
     //     displayPanel.overwriteSegments(&minus, 1, i);
-    //     displayPanel.write();
+    //     displayPanel.flush();
     //     delay(500);
     //     displayPanel.resetSegments(1, i);
-    //     displayPanel.write();
+    //     displayPanel.flush();
     // }
 }

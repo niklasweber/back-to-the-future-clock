@@ -39,9 +39,10 @@ class DisplayPanel
 public:
     void begin();
     void clear();
-    void write();
-    void overwriteSegments(const uint8_t segments[], uint8_t length, uint8_t pos = 0);
-    void resetSegments(uint8_t length, uint8_t pos = 0);
+    void flush();
+    void readSegments(uint8_t * segments, uint8_t length, uint8_t pos = 0, uint8_t layer = 0);
+    void writeSegments(const uint8_t segments[], uint8_t length, uint8_t pos = 0, uint8_t layer = 0, bool updateActiveLayer = false);
+    void setActiveLayers(const uint8_t layers[], uint8_t length, uint8_t pos = 0);
     void setBrightness(unsigned char row, unsigned char column, unsigned char brightness);
     void setBrightnessAll(unsigned char brightness);
     void setAutoBrightness(bool autoBrightness);

@@ -1,7 +1,7 @@
 #include "Display.h"
 #include <Arduino.h>
 
-void Display::write()
+void Display::flush()
 {
     // Get segments from active layers and find changes
     bool hasChange = false;
@@ -59,6 +59,19 @@ void Display::write()
     }
 }
 
+void Display::read(uint8_t * segments, uint8_t length, uint8_t pos, uint8_t layer)
+{
+    // Boundary checks
+    if(pos > segmentsMax-1)
+        pos = segmentsMax-1;
+    if((pos + length) > segmentsMax)
+        length = segmentsMax - pos;
+    if(layer > layersMax-1)
+        layer = layersMax-1;
+
+    memcpy(segments, this->segments[layer]+pos, length);
+}
+
 void Display::setActiveLayer(uint8_t segment, uint8_t layer)
 {
     // Boundary checks
@@ -71,7 +84,7 @@ void Display::setActiveLayer(uint8_t segment, uint8_t layer)
 }
 
 // Only writes to buffer. Use write() to send segments to hardware.
-void Display::setSegments(const uint8_t segments[], uint8_t length, uint8_t pos, uint8_t layer)
+void Display::setSegments(const uint8_t segments[], uint8_t length, uint8_t pos, uint8_t layer, bool updateActiveLayer)
 {
     // Boundary checks
     if(pos > segmentsMax-1)
@@ -82,6 +95,14 @@ void Display::setSegments(const uint8_t segments[], uint8_t length, uint8_t pos,
         layer = layersMax-1;
 
     memcpy(this->segments[layer]+pos, segments, length);
+
+    if(updateActiveLayer)
+    {
+        for(int s=pos; s<length; s++)
+        {
+            activeLayers[s] = layer;
+        }
+    }
 }
 
 uint8_t Display::getSegment(uint8_t pos, uint8_t layer)
@@ -120,4 +141,9 @@ void Display::setBrightness(uint8_t brightness)
 uint8_t Display::getSegmentsMax()
 {
     return segmentsMax;
+}
+
+uint8_t Display::getLayersMax()
+{
+    return layersMax;
 }
