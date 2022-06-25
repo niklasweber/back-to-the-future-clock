@@ -98,7 +98,7 @@ void Display::setSegments(const uint8_t segments[], uint8_t length, uint8_t pos,
 
     if(updateActiveLayer)
     {
-        for(int s=pos; s<length; s++)
+        for(int s=pos; s<pos+length; s++)
         {
             activeLayers[s] = layer;
         }
