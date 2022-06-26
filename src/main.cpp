@@ -209,11 +209,33 @@ void onSetTime(std::string& data)
 
 void onTravel(std::string& data)
 {
+    if(data.length() != 1) return;
+    uint8_t setRTC = data[0];
+    if(setRTC != 0 && setRTC != 1) return;
+
     playSoundAsync("/re_entry.mp3");
 
     uint8_t segments[18];
     displayPanel.readSegments(segments, 18, 18, LAYER_TIME);
     displayPanel.writeSegments(segments, 18, 0, LAYER_TIME);
+
+    if(setRTC)
+    {
+        // RTC can only save year 2000-2099
+        if(destinationTime.Year < 2000)
+            destinationTime.Year = 2000;
+        else if(destinationTime.Year > 2099)
+            destinationTime.Year = 2099;
+        DateTime time = DateTime(
+            destinationTime.Year,
+            destinationTime.Month,
+            destinationTime.Day,
+            destinationTime.Hour,
+            destinationTime.Minute,
+            destinationTime.Second
+        );
+        rtc.adjust(time);
+    }
 
     // Set current time to destination time
     presentTime.setTime(
