@@ -70,39 +70,39 @@ void playSoundAsync(const char * file)
     );
 }
 
-void beepTask( void * parameter )
-{
-    File beep = SPIFFS.open("/beep.mp3");
-    if(!beep || beep.isDirectory()){
-        Serial.println("Failed to open beep.mp3 for reading");
-        vTaskDelete( NULL );
-    }
-    beep.close();
+// void beepTask( void * parameter )
+// {
+//     File beep = SPIFFS.open("/beep.mp3");
+//     if(!beep || beep.isDirectory()){
+//         Serial.println("Failed to open beep.mp3 for reading");
+//         vTaskDelete( NULL );
+//     }
+//     beep.close();
 
-    MP3DecoderHelix mp3Decoder;
-    EncodedAudioStream decoder(out, mp3Decoder); // Decoding stream
+//     MP3DecoderHelix mp3Decoder;
+//     EncodedAudioStream decoder(out, mp3Decoder); // Decoding stream
 
-    StreamCopy copier; // copies sound into i2s
+//     StreamCopy copier; // copies sound into i2s
 
-    //----------------------------------
+//     //----------------------------------
 
-    decoder.setNotifyAudioChange(i2s);
-    decoder.begin();
+//     decoder.setNotifyAudioChange(i2s);
+//     decoder.begin();
 
-    copier.begin(decoder, beep);
+//     copier.begin(decoder, beep);
 
-    while(true)
-    {
-        beep = SPIFFS.open("/beep.mp3");
-        while(!presentTime.now().Halfsecond % 2){}
-        while(copier.copy()){}
-        beep.close();
-    }
+//     while(true)
+//     {
+//         beep = SPIFFS.open("/beep.mp3");
+//         while(!presentTime.now().Halfsecond % 2){}
+//         while(copier.copy()){}
+//         beep.close();
+//     }
 
-    copier.end();
-    decoder.end();
-    vTaskDelete( NULL );
-}
+//     copier.end();
+//     decoder.end();
+//     vTaskDelete( NULL );
+// }
 
 void onSetSegment(std::string& data)
 {
@@ -166,6 +166,8 @@ void onSetTime(std::string& data)
     if(newYear > 9999)
         newYear = 9999;
 
+    playSoundAsync("/time_circuits_off.mp3");
+
     if(slot == 0)
     {
         // set RTC
@@ -207,6 +209,8 @@ void onSetTime(std::string& data)
 
 void onTravel(std::string& data)
 {
+    playSoundAsync("/re_entry.mp3");
+
     uint8_t segments[18];
     displayPanel.readSegments(segments, 18, 18, LAYER_TIME);
     displayPanel.writeSegments(segments, 18, 0, LAYER_TIME);
@@ -375,17 +379,16 @@ void setup()
         &updateTimeTaskHandle     /* Task handle. */
     );
 
-    playSound("/time_circuits_off.mp3");
-    delay(1000);
+    playSoundAsync("/time_circuits_off.mp3");
 
-    xTaskCreate(
-        beepTask,       /* Task function. */
-        "beepTask",     /* String with name of task. */
-        4000,           /* Stack size in bytes. */
-        NULL,           /* Parameter passed as input of the task */
-        1000,           /* Priority of the task. */
-        NULL            /* Task handle. */
-    );
+    // xTaskCreate(
+    //     beepTask,       /* Task function. */
+    //     "beepTask",     /* String with name of task. */
+    //     4000,           /* Stack size in bytes. */
+    //     NULL,           /* Parameter passed as input of the task */
+    //     1000,           /* Priority of the task. */
+    //     NULL            /* Task handle. */
+    // );
 }
 
 void loop() 
