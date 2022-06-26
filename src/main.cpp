@@ -13,6 +13,7 @@
 
 RTC_DS3231 rtc;
 PresentTime presentTime;
+TimeElements_t destinationTime;
 DisplayPanel displayPanel;
 CommandInterface commandInterface;
 
@@ -185,6 +186,16 @@ void onSetTime(std::string& data)
     else if(slot == 1 || slot == 3)
     {
         //slot 0 is for rtc. Thus row 0 = 1, row 2 = 3
+        if(slot == 3)
+        {
+            destinationTime.Halfsecond = 0;
+            destinationTime.Second = 0;
+            destinationTime.Minute = newMinute;
+            destinationTime.Hour = newHour;
+            destinationTime.Day = newDay;
+            destinationTime.Month = newMonth;
+            destinationTime.Year = newYear;
+        }
         slot -= 1;
         displayPanel.setRow(slot);
         displayPanel.setDay(newDay);
@@ -319,12 +330,20 @@ void setup()
     displayPanel.flush();
     displayPanel.setAutoBrightness(true);
 
+    destinationTime.Halfsecond = 0;
+    destinationTime.Second = 0;
+    destinationTime.Minute = 21;
+    destinationTime.Hour = 1;
+    destinationTime.Day = 26;
+    destinationTime.Month = 10;
+    destinationTime.Year = 1985;
+
     // Set top row to "26.10. 1985 AM 01:21"
     displayPanel.setRow(2);
-    displayPanel.setDay(26);
-    displayPanel.setMonth(10);
-    displayPanel.setYear(1985);
-    displayPanel.setHourAndMinute(1, 21);
+    displayPanel.setDay(destinationTime.Day);
+    displayPanel.setMonth(destinationTime.Month);
+    displayPanel.setYear(destinationTime.Year);
+    displayPanel.setHourAndMinute(destinationTime.Hour, destinationTime.Minute);
 
     // Set bottom row to "12.11. 1955 AM 06:38"
     displayPanel.setRow(0);
