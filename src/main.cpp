@@ -22,6 +22,87 @@ TaskHandle_t playSoundTaskHandle = NULL;
 I2SStream i2s(0); // final output of decoded stream
 VolumeStream out(i2s); // stream to control volume
 
+uint8_t playSound(const char * file)
+{
+    File soundFile = SPIFFS.open(file);
+    if(!soundFile || soundFile.isDirectory()){
+        Serial.println("Failed to open sound file for reading");
+        return 1;
+    }
+
+    MP3DecoderHelix mp3Decoder;
+    EncodedAudioStream decoder(out, mp3Decoder);
+
+    StreamCopy copier; // copies sound into i2s
+
+    // setup I2S based on sampling rate provided by decoder
+    decoder.setNotifyAudioChange(i2s);
+    decoder.begin();
+
+    // begin copy
+    copier.begin(decoder, soundFile);
+
+    while(copier.copy()){}
+
+    copier.end();
+    decoder.end();
+    soundFile.close();
+
+    return 0;
+}
+
+void playSoundTask( void * parameter )
+{
+    playSound((const char *)parameter);
+    vTaskDelete( NULL );
+}
+
+void playSoundAsync(const char * file)
+{
+    xTaskCreate(
+        playSoundTask,          /* Task function. */
+        "playSoundTask",        /* String with name of task. */
+        10000,                  /* Stack size in bytes. */
+        ( void * ) file,        /* Parameter passed as input of the task */
+        3,                      /* Priority of the task. */
+        &playSoundTaskHandle    /* Task handle. */
+    );
+}
+
+void beepTask( void * parameter )
+{
+    File beep = SPIFFS.open("/beep.mp3");
+    if(!beep || beep.isDirectory()){
+        Serial.println("Failed to open beep.mp3 for reading");
+        vTaskDelete( NULL );
+    }
+    beep.close();
+
+    MP3DecoderHelix mp3Decoder;
+    EncodedAudioStream decoder(out, mp3Decoder); // Decoding stream
+
+    StreamCopy copier; // copies sound into i2s
+
+    //----------------------------------
+
+    decoder.setNotifyAudioChange(i2s);
+    decoder.begin();
+
+    copier.begin(decoder, beep);
+
+    while(true)
+    {
+        beep = SPIFFS.open("/beep.mp3");
+        while(!presentTime.now().Halfsecond % 2){}
+        while(copier.copy()){}
+        beep.close();
+    }
+
+    copier.end();
+    decoder.end();
+    vTaskDelete( NULL );
+}
+
 void onSetSegment(std::string& data)
 {
     if(data.length() < 1) return;
@@ -132,87 +213,6 @@ void onSetPlayback(std::string& data)
     Serial.print(data.length());
     Serial.print(" ");
     Serial.println(data.c_str());
-}
-
-uint8_t playSound(const char * file)
-{
-    File soundFile = SPIFFS.open(file);
-    if(!soundFile || soundFile.isDirectory()){
-        Serial.println("Failed to open sound file for reading");
-        return 1;
-    }
-
-    MP3DecoderHelix mp3Decoder;
-    EncodedAudioStream decoder(out, mp3Decoder);
-
-    StreamCopy copier; // copies sound into i2s
-
-    // setup I2S based on sampling rate provided by decoder
-    decoder.setNotifyAudioChange(i2s);
-    decoder.begin();
-
-    // begin copy
-    copier.begin(decoder, soundFile);
-
-    while(copier.copy()){}
-
-    copier.end();
-    decoder.end();
-    soundFile.close();
-
-    return 0;
-}
-
-void playSoundTask( void * parameter )
-{
-    playSound((const char *)parameter);
-    vTaskDelete( NULL );
-}
-
-void playSoundAsync(const char * file)
-{
-    xTaskCreate(
-        playSoundTask,          /* Task function. */
-        "playSoundTask",        /* String with name of task. */
-        10000,                  /* Stack size in bytes. */
-        ( void * ) file,        /* Parameter passed as input of the task */
-        3,                      /* Priority of the task. */
-        &playSoundTaskHandle    /* Task handle. */
-    );
-}
-
-void beepTask( void * parameter )
-{
-    File beep = SPIFFS.open("/beep.mp3");
-    if(!beep || beep.isDirectory()){
-        Serial.println("Failed to open beep.mp3 for reading");
-        vTaskDelete( NULL );
-    }
-    beep.close();
-
-    MP3DecoderHelix mp3Decoder;
-    EncodedAudioStream decoder(out, mp3Decoder); // Decoding stream
-
-    StreamCopy copier; // copies sound into i2s
-
-    //----------------------------------
-
-    decoder.setNotifyAudioChange(i2s);
-    decoder.begin();
-
-    copier.begin(decoder, beep);
-
-    while(true)
-    {
-        beep = SPIFFS.open("/beep.mp3");
-        while(!presentTime.now().Halfsecond % 2){}
-        while(copier.copy()){}
-        beep.close();
-    }
-
-    copier.end();
-    decoder.end();
-    vTaskDelete( NULL );
 }
 
 void updateTimeTask( void * parameter )
