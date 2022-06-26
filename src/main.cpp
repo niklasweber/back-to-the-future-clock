@@ -207,7 +207,20 @@ void onSetTime(std::string& data)
 
 void onTravel(std::string& data)
 {
-    Serial.println("TRAVEL!!!!!!!!");
+    uint8_t segments[18];
+    displayPanel.readSegments(segments, 18, 18, LAYER_TIME);
+    displayPanel.writeSegments(segments, 18, 0, LAYER_TIME);
+
+    // Set current time to destination time
+    presentTime.setTime(
+        destinationTime.Year,
+        destinationTime.Month,
+        destinationTime.Day,
+        destinationTime.Hour,
+        destinationTime.Minute,
+        destinationTime.Second,
+        destinationTime.Halfsecond
+    );
 }
 
 void onSetVolume(std::string& data)
