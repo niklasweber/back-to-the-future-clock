@@ -84,13 +84,13 @@
 void CommandInterface::onConnect(BLEServer* pServer)
 {
     // deviceConnected = true;
-    //BLEDevice::startAdvertising();
     Serial.println("Client connected");
 }
 
 void CommandInterface::onDisconnect(BLEServer* pServer)
 {
     // deviceConnected = false;
+    BLEDevice::startAdvertising();
     Serial.println("Client disconnected");
 }
 
